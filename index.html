@@ -112,6 +112,9 @@ main{flex:1; width:100%; display:flex; flex-direction:column; justify-content:ce
 .card.open.pick-android .apps.android,.card.open.pick-ios .apps.ios{display:block; animation:rise .4s cubic-bezier(.2,.8,.2,1)}
 .steps{margin-top:12px; padding:12px 14px; border-radius:16px; background:rgba(255,255,255,.05); border:1px solid var(--line); font-size:13px; line-height:1.95; color:var(--text)}
 .steps b{color:var(--gold-hi)}
+.inapp{display:none; margin-top:12px; padding:12px 14px; border-radius:16px; background:rgba(224,120,120,.12); border:1px solid rgba(224,120,120,.5); font-size:13px; line-height:1.9; color:var(--text)}
+.inapp.show{display:block}
+.inapp button{margin-top:8px; width:100%; padding:10px; border-radius:14px; border:1px solid rgba(217,178,95,.6); background:rgba(217,178,95,.16); color:var(--gold-hi); font:inherit; font-weight:700; cursor:pointer}
 .back{margin-top:14px; background:none; border:0; color:var(--muted); font:inherit; font-size:14px; cursor:pointer; padding:6px 2px}
 .hint{margin-top:10px; font-size:12.5px; color:var(--muted); line-height:1.8}
 
@@ -201,6 +204,7 @@ footer{width:100%; text-align:center; padding:14px 16px 22px; position:relative;
             <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#f0d48a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c.6-3.8 3.4-6 7-6s6.4 2.2 7 6"/></svg></span>
             <span>العميل (آيفون)<small>افتحه ثم أضفه للشاشة الرئيسية</small></span><span class="dl"><svg viewBox="0 0 24 24" fill="none" stroke="#f0d48a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></span>
           </a>
+          <div class="inapp" id="inapp"><b>⚠️ أنت فاتح الصفحة من داخل تطبيق (مثل واتساب)، والتثبيت ما بيزبط من هون.</b><br>اضغط «نسخ الرابط»، وبعدين افتح متصفح <b>Safari</b> والصق الرابط بشريط العنوان.<button type="button" id="copylink">نسخ الرابط</button></div>
           <div class="steps"><b>طريقة التثبيت على الآيفون:</b><br>1) افتح الرابط بمتصفح <b>Safari</b> (مو من واتساب).<br>2) اضغط زر <b>المشاركة</b>.<br>3) اختر <b>«إضافة إلى الشاشة الرئيسية»</b>.</div>
           <div class="hint">الإشعارات على الآيفون بس من iOS 16.4 وأحدث وبعد الإضافة للشاشة الرئيسية، وبتوصل والتطبيق مفتوح. موقع الكابتن بالخلفية ضعيف، وما في عدّاد ولا فقاعة عائمة.</div>
           <button class="back" id="back-ios">› رجوع</button>
@@ -293,6 +297,22 @@ document.getElementById("pick-android").addEventListener("click", choose("pick-a
 document.getElementById("pick-ios").addEventListener("click", choose("pick-ios"));
 document.getElementById("back").addEventListener("click", choose(null));
 document.getElementById("back-ios").addEventListener("click", choose(null));
+
+// ---- iPhone: a page opened inside another app (WhatsApp, Instagram...) cannot be installed; ask him to open Safari
+(function(){
+  var ua = navigator.userAgent || "";
+  var ios = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  // Safari and the iOS browsers carry the "Safari/" token; an in-app web view does not
+  var inApp = ios && !/Safari\//.test(ua);
+  if (inApp) document.getElementById("inapp").classList.add("show");
+  document.getElementById("copylink").addEventListener("click", function(e){
+    e.stopPropagation();
+    var b = e.currentTarget, url = location.href.split("#")[0];
+    function done(){ b.textContent = "اننسخ ✓ الصقه بـ Safari"; }
+    function fallback(){ var t = document.createElement("textarea"); t.value = url; t.style.position = "fixed"; t.style.opacity = "0"; document.body.appendChild(t); t.select(); try { document.execCommand("copy"); done(); } catch (x) { b.textContent = url; } document.body.removeChild(t); }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, fallback); else fallback();
+  });
+})();
 
 // ---- direct download links: the newest release file of each app
 function ready(kind, a){
