@@ -89,7 +89,6 @@ main{flex:1; width:100%; display:flex; flex-direction:column; justify-content:ce
 /* project one: the two apps */
 .card.clickable{cursor:pointer}
 .apps{display:none; margin-top:16px}
-.card.open .apps{display:block; animation:rise .4s cubic-bezier(.2,.8,.2,1)}
 .card.open .closed{display:none}
 @keyframes rise{from{opacity:0; transform:translateY(12px)}to{opacity:1; transform:none}}
 .app{
@@ -106,6 +105,13 @@ main{flex:1; width:100%; display:flex; flex-direction:column; justify-content:ce
 .app .dl{margin-inline-start:auto; flex:none}
 .app .dl svg{width:22px;height:22px}
 .app.off{opacity:.55; pointer-events:none; border-color:var(--line)}
+.plat{display:none; margin-top:16px}
+.card.open .plat{display:block; animation:rise .4s cubic-bezier(.2,.8,.2,1)}
+.card.open.pick-android .plat,.card.open.pick-ios .plat{display:none}
+.card.open .apps{display:none}
+.card.open.pick-android .apps.android,.card.open.pick-ios .apps.ios{display:block; animation:rise .4s cubic-bezier(.2,.8,.2,1)}
+.steps{margin-top:12px; padding:12px 14px; border-radius:16px; background:rgba(255,255,255,.05); border:1px solid var(--line); font-size:13px; line-height:1.95; color:var(--text)}
+.steps b{color:var(--gold-hi)}
 .back{margin-top:14px; background:none; border:0; color:var(--muted); font:inherit; font-size:14px; cursor:pointer; padding:6px 2px}
 .hint{margin-top:10px; font-size:12.5px; color:var(--muted); line-height:1.8}
 
@@ -168,7 +174,11 @@ footer{width:100%; text-align:center; padding:14px 16px 22px; position:relative;
         <div class="closed">
           <div class="tap">اضغط لعرض التطبيقات <span>‹</span></div>
         </div>
-        <div class="apps">
+        <div class="plat">
+          <button class="app" id="pick-android" type="button"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#f0d48a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M11 18h2"/></svg></span><span>أندرويد<small>تنزيل مباشر (APK)</small></span><span class="dl"><svg viewBox="0 0 24 24" fill="none" stroke="#f0d48a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></span></button>
+          <button class="app" id="pick-ios" type="button"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#f0d48a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M11 18h2"/></svg></span><span>آيفون<small>تطبيق ويب، بدون متجر</small></span><span class="dl"><svg viewBox="0 0 24 24" fill="none" stroke="#f0d48a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></span></button>
+        </div>
+        <div class="apps android">
           <a class="app off" id="dl-captain" href="#">
             <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#f0d48a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16v-3l2-5a2 2 0 0 1 2-1h8a2 2 0 0 1 2 1l2 5v3z"/><circle cx="7.5" cy="16.5" r="1.6"/><circle cx="16.5" cy="16.5" r="1.6"/><path d="M5 12h14"/></svg></span>
             <span>الكابتن<small id="st-captain">جاري الفحص…</small></span>
@@ -181,6 +191,19 @@ footer{width:100%; text-align:center; padding:14px 16px 22px; position:relative;
           </a>
           <div class="hint">بعد التنزيل افتح الملف ووافق على «السماح بالتثبيت من هذا المصدر».</div>
           <button class="back" id="back">› رجوع</button>
+        </div>
+        <div class="apps ios">
+          <a class="app" id="ios-captain" href="./captain/">
+            <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#f0d48a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16v-3l2-5a2 2 0 0 1 2-1h8a2 2 0 0 1 2 1l2 5v3z"/><circle cx="7.5" cy="16.5" r="1.6"/><circle cx="16.5" cy="16.5" r="1.6"/><path d="M5 12h14"/></svg></span>
+            <span>الكابتن (آيفون)<small>افتحه ثم أضفه للشاشة الرئيسية</small></span><span class="dl"><svg viewBox="0 0 24 24" fill="none" stroke="#f0d48a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></span>
+          </a>
+          <a class="app" id="ios-rider" href="./rider/">
+            <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#f0d48a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c.6-3.8 3.4-6 7-6s6.4 2.2 7 6"/></svg></span>
+            <span>العميل (آيفون)<small>افتحه ثم أضفه للشاشة الرئيسية</small></span><span class="dl"><svg viewBox="0 0 24 24" fill="none" stroke="#f0d48a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></span>
+          </a>
+          <div class="steps"><b>طريقة التثبيت على الآيفون:</b><br>1) افتح الرابط بمتصفح <b>Safari</b> (مو من واتساب).<br>2) اضغط زر <b>المشاركة</b>.<br>3) اختر <b>«إضافة إلى الشاشة الرئيسية»</b>.</div>
+          <div class="hint">الإشعارات على الآيفون بس من iOS 16.4 وأحدث وبعد الإضافة للشاشة الرئيسية، وبتوصل والتطبيق مفتوح. موقع الكابتن بالخلفية ضعيف، وما في عدّاد ولا فقاعة عائمة.</div>
+          <button class="back" id="back-ios">› رجوع</button>
         </div>
       </section>
 
@@ -265,7 +288,11 @@ p1.addEventListener("click", function(e){
   if (e.target.closest(".apps")) return;
   p1.classList.add("open");
 });
-document.getElementById("back").addEventListener("click", function(e){ e.stopPropagation(); p1.classList.remove("open"); });
+function choose(c){ return function(e){ e.stopPropagation(); p1.classList.remove("pick-android", "pick-ios"); if (c) p1.classList.add(c); }; }
+document.getElementById("pick-android").addEventListener("click", choose("pick-android"));
+document.getElementById("pick-ios").addEventListener("click", choose("pick-ios"));
+document.getElementById("back").addEventListener("click", choose(null));
+document.getElementById("back-ios").addEventListener("click", choose(null));
 
 // ---- direct download links: the newest release file of each app
 function ready(kind, a){
