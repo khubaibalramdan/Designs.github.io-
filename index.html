@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#03060f">
+<title>Khubaib Alramdan · Projects</title>
+<style>
+:root{
+  --night:#03060f; --ink:#0a1024; --gold:#d9b25f; --gold-hi:#f3dc9c; --gold-lo:#8d6a2a;
+  --text:#d5d9e6; --muted:#8c93a8; --line:rgba(255,255,255,.16);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  min-height:100%; color:var(--text); overflow-x:hidden;
+  font-family:"Segoe UI","Noto Sans Arabic","Noto Naskh Arabic",Tahoma,system-ui,sans-serif;
+  background:
+    radial-gradient(60% 45% at 8% 6%, rgba(22,44,120,.75), transparent 70%),
+    radial-gradient(40% 40% at 100% 58%, rgba(120,88,30,.28), transparent 70%),
+    radial-gradient(50% 35% at 30% 100%, rgba(12,30,90,.55), transparent 70%),
+    var(--night);
+  background-attachment:fixed;
+  display:flex; flex-direction:column; align-items:center;
+}
+/* faint stars */
+body::before{
+  content:""; position:fixed; inset:0; pointer-events:none; opacity:.55;
+  background-image:
+    radial-gradient(1px 1px at 20px 30px, rgba(255,255,255,.35), transparent 60%),
+    radial-gradient(1px 1px at 140px 110px, rgba(255,255,255,.22), transparent 60%),
+    radial-gradient(1px 1px at 90px 190px, rgba(255,255,255,.28), transparent 60%),
+    radial-gradient(1px 1px at 230px 60px, rgba(255,255,255,.18), transparent 60%);
+  background-size:260px 240px;
+}
+.serif{font-family:"Times New Roman","Cormorant Garamond",Georgia,serif}
+.goldtext{background:linear-gradient(100deg,var(--gold-lo),var(--gold) 30%,var(--gold-hi) 70%,var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
+
+header{width:100%; text-align:center; padding:22px 16px 0; position:relative; z-index:1}
+.emblem{
+  width:62px;height:62px;margin:0 auto 18px;border-radius:20px;display:grid;place-items:center;
+  background:linear-gradient(160deg,rgba(255,255,255,.14),rgba(255,255,255,.03));
+  border:1px solid rgba(255,255,255,.28);
+  box-shadow:0 0 34px rgba(217,178,95,.22), inset 0 1px 0 rgba(255,255,255,.25);
+}
+.emblem svg{width:30px;height:30px}
+.kicker{direction:ltr;font-size:12px;letter-spacing:.42em;color:var(--gold);font-weight:700}
+.kicker b{letter-spacing:0;font-weight:700;margin-inline-start:.5em}
+h1{direction:ltr;font-weight:400;font-size:clamp(34px,8.4vw,46px);line-height:1.25;margin-top:6px}
+.rule{display:flex;align-items:center;justify-content:center;gap:10px;margin:14px auto 0;width:min(260px,62vw);color:var(--gold)}
+.rule i{flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--gold-lo))}
+.rule i:last-child{background:linear-gradient(270deg,transparent,var(--gold-lo))}
+.rule span{font-size:11px;letter-spacing:-1px}
+
+main{flex:1; width:100%; display:flex; flex-direction:column; justify-content:center; position:relative; z-index:1; padding:26px 0 10px}
+.stage{position:relative; width:100%}
+.track{
+  display:flex; gap:18px; overflow-x:auto; scroll-snap-type:x mandatory; scroll-behavior:smooth;
+  padding:26px 20vw; scrollbar-width:none; overscroll-behavior-x:contain;
+}
+.track::-webkit-scrollbar{display:none}
+.card{
+  flex:0 0 60vw; max-width:340px; min-height:300px; scroll-snap-align:center; position:relative;
+  border-radius:30px; padding:22px 22px 26px; overflow:hidden;
+  background:linear-gradient(165deg,rgba(255,255,255,.10),rgba(255,255,255,.025) 45%,rgba(255,255,255,.04));
+  border:1px solid var(--line);
+  box-shadow:0 24px 60px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.18);
+  -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px);
+  transition:transform .45s cubic-bezier(.2,.8,.2,1), opacity .45s;
+  transform:scale(.86); opacity:.55;
+}
+.card.on{transform:scale(1); opacity:1}
+.card .num{position:absolute; top:6px; left:14px; direction:ltr; font-size:44px; line-height:1; color:rgba(255,255,255,.10); font-weight:700}
+.head{display:flex; align-items:center; gap:14px; margin-top:6px}
+.tile{
+  flex:none; width:62px; height:62px; border-radius:20px; display:grid; place-items:center; position:relative;
+  background:radial-gradient(circle at 50% 70%, rgba(217,178,95,.38), rgba(255,255,255,.05) 70%);
+  border:1px solid rgba(255,255,255,.3);
+  box-shadow:0 8px 22px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.35);
+}
+.tile::before{content:"";position:absolute;top:4px;left:9px;right:9px;height:15px;border-radius:12px 12px 20px 20px;background:rgba(255,255,255,.16)}
+.tile svg{width:28px;height:28px;position:relative}
+.card h2{font-size:23px; font-weight:700; color:var(--gold-hi); line-height:1.3}
+.card h2.ltr{direction:ltr; font-weight:500; letter-spacing:.02em}
+.card p{margin-top:22px; font-size:15.5px; line-height:2.05; color:var(--text)}
+.card p.soon{color:var(--muted)}
+.tap{margin-top:18px; display:inline-flex; align-items:center; gap:8px; font-size:14px; color:var(--gold); font-weight:700}
+
+/* project one: the two apps */
+.card.clickable{cursor:pointer}
+.apps{display:none; margin-top:16px}
+.card.open .apps{display:block; animation:rise .4s cubic-bezier(.2,.8,.2,1)}
+.card.open .closed{display:none}
+@keyframes rise{from{opacity:0; transform:translateY(12px)}to{opacity:1; transform:none}}
+.app{
+  display:flex; align-items:center; gap:12px; width:100%; margin-top:12px; padding:12px 14px; text-decoration:none;
+  border-radius:20px; color:var(--gold-hi); font:inherit; font-weight:700; font-size:17px;
+  background:linear-gradient(160deg,rgba(255,255,255,.12),rgba(255,255,255,.03));
+  border:1px solid rgba(217,178,95,.45);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.2);
+}
+.app:active{transform:scale(.98)}
+.app small{display:block; font-weight:400; font-size:12.5px; color:var(--muted); margin-top:2px}
+.app .ic{flex:none; width:40px; height:40px; border-radius:14px; display:grid; place-items:center; background:rgba(217,178,95,.16); border:1px solid rgba(255,255,255,.2)}
+.app .ic svg{width:22px; height:22px}
+.app .dl{margin-inline-start:auto; flex:none}
+.app .dl svg{width:22px;height:22px}
+.app.off{opacity:.55; pointer-events:none; border-color:var(--line)}
+.back{margin-top:14px; background:none; border:0; color:var(--muted); font:inherit; font-size:14px; cursor:pointer; padding:6px 2px}
+.hint{margin-top:10px; font-size:12.5px; color:var(--muted); line-height:1.8}
+
+/* arrows + dots */
+.nav{
+  position:absolute; top:50%; width:46px; height:46px; margin-top:-23px; border-radius:50%; cursor:pointer; z-index:3;
+  display:grid; place-items:center; background:rgba(5,9,22,.72); border:1.5px solid var(--gold);
+  box-shadow:0 0 0 4px rgba(217,178,95,.14), 0 0 18px rgba(217,178,95,.35); color:var(--gold-hi);
+}
+.nav svg{width:22px;height:22px}
+.nav.prev{right:10px} .nav.next{left:10px}
+.nav[disabled]{opacity:0; pointer-events:none}
+.dots{display:flex; justify-content:center; gap:12px; margin-top:8px; direction:ltr}
+.dots i{width:10px; height:10px; border-radius:10px; background:rgba(255,255,255,.22); transition:all .35s}
+.dots i.on{width:34px; background:linear-gradient(90deg,var(--gold),var(--gold-hi))}
+
+footer{width:100%; text-align:center; padding:14px 16px 22px; position:relative; z-index:1}
+.sign{
+  display:inline-flex; align-items:center; gap:22px; padding:14px 30px; border-radius:60px; direction:ltr;
+  background:linear-gradient(160deg,rgba(255,255,255,.10),rgba(255,255,255,.02));
+  border:1px solid rgba(255,255,255,.22); border-top-color:rgba(217,178,95,.75);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.15);
+}
+.sign svg{width:16px;height:16px;flex:none}
+.sign .by{font-size:11px; letter-spacing:.42em; color:var(--muted)}
+.sign .name{font-size:23px; margin-top:2px}
+.copy{margin-top:10px; font-size:12px; letter-spacing:.2em; color:var(--muted); direction:ltr}
+
+@media (min-width:900px){
+  .track{overflow:visible; justify-content:center; padding:26px 24px; gap:20px}
+  .card{flex:0 0 250px; transform:none; opacity:1}
+  .nav,.dots{display:none}
+}
+@media (prefers-reduced-motion:reduce){.card,.dots i{transition:none}.track{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="emblem"><svg viewBox="0 0 32 32" fill="none" stroke="#e8c877" stroke-width="1.6"><rect x="8" y="8" width="16" height="16" rx="2.5" transform="rotate(20 16 16)"/><circle cx="16" cy="16" r="2.6" fill="#e8c877" stroke="none"/></svg></div>
+  <div class="kicker">PROJECTS ·<b>مشاريع</b></div>
+  <h1 class="serif goldtext">Khubaib Alramdan</h1>
+  <div class="rule"><i></i><span>◇◆◇</span><i></i></div>
+</header>
+
+<main>
+  <div class="stage">
+    <button class="nav prev" id="prev" aria-label="السابق"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+    <button class="nav next" id="next" aria-label="التالي"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+
+    <div class="track" id="track">
+
+      <!-- 1 -->
+      <section class="card clickable" id="p1">
+        <span class="num serif">1</span>
+        <div class="head">
+          <div class="tile"><svg viewBox="0 0 24 24" fill="none" stroke="#f0d48a" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3l8 4-8 4-8-4z"/><path d="M4 12l8 4 8-4"/><path d="M4 16.5l8 4 8-4"/></svg></div>
+          <h2>أبناء الشمال</h2>
+        </div>
+        <div class="closed">
+          <div class="tap">اضغط لعرض التطبيقات <span>‹</span></div>
+        </div>
+        <div class="apps">
+          <a class="app off" id="dl-captain" href="#">
+            <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#f0d48a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16v-3l2-5a2 2 0 0 1 2-1h8a2 2 0 0 1 2 1l2 5v3z"/><circle cx="7.5" cy="16.5" r="1.6"/><circle cx="16.5" cy="16.5" r="1.6"/><path d="M5 12h14"/></svg></span>
+            <span>الكابتن<small id="st-captain">جاري الفحص…</small></span>
+            <span class="dl"><svg viewBox="0 0 24 24" fill="none" stroke="#f0d48a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/></svg></span>
+          </a>
+          <a class="app off" id="dl-rider" href="#">
+            <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#f0d48a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c.6-3.8 3.4-6 7-6s6.4 2.2 7 6"/></svg></span>
+            <span>العميل<small id="st-rider">جاري الفحص…</small></span>
+            <span class="dl"><svg viewBox="0 0 24 24" fill="none" stroke="#f0d48a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/></svg></span>
+          </a>
+          <div class="hint">بعد التنزيل افتح الملف ووافق على «السماح بالتثبيت من هذا المصدر».</div>
+          <button class="back" id="back">› رجوع</button>
+        </div>
+      </section>
+
+      <!-- 2 -->
+      <section class="card">
+        <span class="num serif">2</span>
+        <div class="head">
+          <div class="tile"><svg viewBox="0 0 24 24" fill="none" stroke="#f0d48a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8.5 11V7.5a3.5 3.5 0 0 1 6.8-1.2"/><circle cx="12" cy="15.5" r="1.3" fill="#f0d48a" stroke="none"/></svg></div>
+          <h2 class="ltr">My‑secret</h2>
+        </div>
+        <p>تطبيق أندرويد يرتّب ملفاتك فيوزّع كل ملف على مشروعه، ويرفع ويسحب من GitHub، وفيه خزنة مشفّرة لحفظ كلمات السر والمفاتيح.</p>
+      </section>
+
+      <!-- 3 -->
+      <section class="card">
+        <span class="num serif">3</span>
+        <div class="head">
+          <div class="tile"><svg viewBox="0 0 24 24" fill="none" stroke="#f0d48a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M8.5 12.2l2.4 2.4 4.6-5"/></svg></div>
+          <h2>المشروع الثالث</h2>
+        </div>
+        <p class="soon">الهدف قريباً.</p>
+      </section>
+
+      <!-- 4 -->
+      <section class="card">
+        <span class="num serif">4</span>
+        <div class="head">
+          <div class="tile"><svg viewBox="0 0 24 24" fill="none" stroke="#f0d48a" stroke-width="1.8" stroke-linejoin="round"><path d="M12 4l2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/></svg></div>
+          <h2>المشروع الرابع</h2>
+        </div>
+        <p class="soon">الهدف قريباً.</p>
+      </section>
+
+    </div>
+    <div class="dots" id="dots"><i></i><i></i><i></i><i></i></div>
+  </div>
+</main>
+
+<footer>
+  <div class="sign">
+    <svg viewBox="0 0 24 24" fill="#e8c877"><path d="M12 1l2.6 4.7 5.2-1.5-1.5 5.2L23 12l-4.7 2.6 1.5 5.2-5.2-1.5L12 23l-2.6-4.7-5.2 1.5 1.5-5.2L1 12l4.7-2.6-1.5-5.2 5.2 1.5z"/></svg>
+    <div><div class="by">DESIGN BY</div><div class="name serif goldtext">Khubaib Alramdan</div></div>
+    <svg viewBox="0 0 24 24" fill="#e8c877"><path d="M12 1l2.6 4.7 5.2-1.5-1.5 5.2L23 12l-4.7 2.6 1.5 5.2-5.2-1.5L12 23l-2.6-4.7-5.2 1.5 1.5-5.2L1 12l4.7-2.6-1.5-5.2 5.2 1.5z"/></svg>
+  </div>
+  <div class="copy">© 2026</div>
+</footer>
+
+<script>
+// Where the rider and captain files live (public releases of this repository). Change only this line if it moves.
+var REPO = "khubaibalramdan/Designs.github.io-";
+
+// ---- swipe right/left between the cards
+var track = document.getElementById("track");
+var cards = [].slice.call(track.querySelectorAll(".card"));
+var dots = [].slice.call(document.querySelectorAll("#dots i"));
+var cur = 0;
+function centerOf(el){ var r = el.getBoundingClientRect(); return r.left + r.width / 2; }
+function sync(){
+  var mid = window.innerWidth / 2, best = 0, d = Infinity;
+  cards.forEach(function(c, i){ var x = Math.abs(centerOf(c) - mid); if (x < d) { d = x; best = i; } });
+  cur = best;
+  cards.forEach(function(c, i){ c.classList.toggle("on", i === best); });
+  dots.forEach(function(o, i){ o.classList.toggle("on", i === best); });
+  document.getElementById("prev").disabled = best === 0;
+  document.getElementById("next").disabled = best === cards.length - 1;
+}
+function go(i){
+  i = Math.max(0, Math.min(cards.length - 1, i));
+  cards[i].scrollIntoView({behavior: "smooth", inline: "center", block: "nearest"});
+}
+var t; track.addEventListener("scroll", function(){ clearTimeout(t); t = setTimeout(sync, 40); }, {passive: true});
+window.addEventListener("resize", sync);
+document.getElementById("prev").onclick = function(){ go(cur - 1); };
+document.getElementById("next").onclick = function(){ go(cur + 1); };
+cards.forEach(function(c, i){ c.addEventListener("click", function(){ if (i !== cur && window.innerWidth < 900) go(i); }); });
+sync();
+
+// ---- project one opens on its two apps
+var p1 = document.getElementById("p1");
+p1.addEventListener("click", function(e){
+  if (window.innerWidth < 900 && cards.indexOf(p1) !== cur) return;
+  if (e.target.closest(".apps")) return;
+  p1.classList.add("open");
+});
+document.getElementById("back").addEventListener("click", function(e){ e.stopPropagation(); p1.classList.remove("open"); });
+
+// ---- direct download links: the newest release file of each app
+function ready(kind, a){
+  var el = document.getElementById("dl-" + kind), st = document.getElementById("st-" + kind);
+  if (a) { el.href = a.url; el.classList.remove("off"); st.textContent = "تنزيل مباشر · نسخة " + a.tag; }
+  else { st.textContent = "غير متوفر حالياً"; }
+}
+fetch("https://api.github.com/repos/" + REPO + "/releases?per_page=30").then(function(r){ return r.json(); }).then(function(list){
+  var best = {};
+  (Array.isArray(list) ? list : []).forEach(function(rel){
+    var when = Date.parse(rel.published_at || rel.created_at) || 0;
+    (rel.assets || []).forEach(function(a){
+      if (!/\.apk$/i.test(a.name)) return;
+      var k = /rider/i.test(a.name) ? "rider" : /captain/i.test(a.name) ? "captain" : null;
+      if (k && (!best[k] || when > best[k].when)) best[k] = {when: when, url: a.browser_download_url, tag: String(rel.tag_name).replace(/^\D+/, "")};
+    });
+  });
+  ready("rider", best.rider); ready("captain", best.captain);
+}).catch(function(){ ready("rider", null); ready("captain", null); });
+</script>
+</body>
+</html>
