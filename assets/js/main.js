@@ -145,10 +145,6 @@
   window.setTimeout(() => {
     splash.classList.add("is-hidden");
     app.classList.add("is-ready");
-    if (!splashStarted && !splashToneFinished && soundEnabled) {
-      splashToneFinished = true;
-      startAmbient();
-    }
   }, 2250);
 
   updateSoundButton();
