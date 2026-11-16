@@ -94,8 +94,8 @@
     }
   }
 
-  async function startSound() {
-    if (isAudioActive() || soundState === SOUND.MUTED) return;
+  async function startSound(manualRequest = false) {
+    if (isAudioActive() || (soundState === SOUND.MUTED && !manualRequest)) return;
 
     const requestId = ++playRequest;
     pauseAllAudio();
@@ -140,7 +140,7 @@
 
     if (soundState === SOUND.MUTED || soundState === SOUND.BLOCKED) {
       soundState = SOUND.BLOCKED;
-      startSound();
+      startSound(true);
     }
   }
 
