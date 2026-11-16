@@ -128,9 +128,9 @@
   startSound();
 
   // Capture the first real interaction anywhere on the page, including the splash.
-  const startOnFirstInteraction = () => {
-    if (!soundEnabled) startSound();
-    if (soundEnabled || !playPending) {
+  const startOnFirstInteraction = async () => {
+    if (!soundEnabled) await startSound();
+    if (soundEnabled) {
       document.removeEventListener("pointerdown", startOnFirstInteraction, true);
       document.removeEventListener("touchend", startOnFirstInteraction, true);
       document.removeEventListener("click", startOnFirstInteraction, true);
