@@ -12,8 +12,8 @@
   const scrim = document.getElementById("menu-scrim");
 
   const AMBIENT_VOLUME = 0.16;
-  let soundEnabled = false;
-  let sequenceStarted = false;
+  let soundEnabled = true;
+  let splashStarted = false;
   let splashToneFinished = false;
   let ambientPending = false;
 
@@ -57,18 +57,11 @@
     }
   }
 
-  async function startSoundSequence() {
-    if (!soundEnabled || sequenceStarted) return;
-    sequenceStarted = true;
+  async function attemptAutomaticSound() {
+    if (!soundEnabled || splashStarted) return;
 
     const splashIsVisible = splash && !splash.classList.contains("is-hidden");
-    if (splashToneFinished || !splashIsVisible) {
-      splashToneFinished = true;
-      await startAmbient();
-      return;
-    }
-
-    if (!splashAudio) {
+    if (!splashIsVisible || !splashAudio) {
       splashToneFinished = true;
       await startAmbient();
       return;
@@ -78,9 +71,10 @@
     splashAudio.currentTime = 0;
     try {
       await splashAudio.play();
+      splashStarted = true;
     } catch {
-      splashToneFinished = true;
-      await startAmbient();
+      // Browser autoplay policy blocked playback; retry on the first user gesture.
+      splashStarted = false;
     }
   }
 
@@ -94,6 +88,7 @@
       ambientAudio.pause();
       ambientAudio.currentTime = 0;
     }
+    splashStarted = false;
     updateSoundButton();
   }
 
@@ -101,18 +96,9 @@
     if (soundEnabled) return;
     soundEnabled = true;
     updateSoundButton();
-    if (sequenceStarted && splashAudio && !splashToneFinished) {
-      splashAudio.play().catch(() => {
-        splashToneFinished = true;
-        startAmbient();
-      });
-      return;
-    }
-    if (sequenceStarted && splashToneFinished) {
-      startAmbient();
-      return;
-    }
-    startSoundSequence();
+    if (splashStarted) return;
+    if (splashToneFinished) startAmbient();
+    else attemptAutomaticSound();
   }
 
   menuButton.addEventListener("click", () => {
@@ -137,10 +123,12 @@
 
   if (splashAudio) {
     splashAudio.addEventListener("ended", () => {
+      splashStarted = false;
       splashToneFinished = true;
       if (soundEnabled) startAmbient();
     });
     splashAudio.addEventListener("error", () => {
+      splashStarted = false;
       splashToneFinished = true;
       if (soundEnabled) startAmbient();
     });
@@ -148,7 +136,7 @@
 
   window.addEventListener("pagehide", stopSound);
   window.addEventListener("pageshow", () => {
-    if (ambientAudio && ambientAudio.paused) {
+    if (ambientAudio && ambientAudio.paused && splashToneFinished) {
       soundEnabled = false;
       updateSoundButton();
     }
@@ -157,21 +145,29 @@
   window.setTimeout(() => {
     splash.classList.add("is-hidden");
     app.classList.add("is-ready");
+    if (!splashStarted && !splashToneFinished && soundEnabled) {
+      splashToneFinished = true;
+      startAmbient();
+    }
   }, 2250);
 
   updateSoundButton();
 
-  const startOnFirstInteraction = (event) => {
-    if ((event.target instanceof Element && event.target.closest("#sound-trigger")) || soundEnabled || sequenceStarted) return;
-    enableSound();
-    document.removeEventListener("pointerdown", startOnFirstInteraction, true);
-    document.removeEventListener("touchend", startOnFirstInteraction, true);
-    document.removeEventListener("click", startOnFirstInteraction, true);
-    document.removeEventListener("keydown", startOnFirstInteraction, true);
+  // Attempt playback immediately. If Chrome blocks autoplay, retry on the first real interaction.
+  attemptAutomaticSound();
+
+  const retryAfterGesture = (event) => {
+    if (event.target instanceof Element && event.target.closest("#sound-trigger")) return;
+    if (!soundEnabled || splashStarted || splashToneFinished) return;
+    attemptAutomaticSound();
+    document.removeEventListener("pointerdown", retryAfterGesture, true);
+    document.removeEventListener("touchend", retryAfterGesture, true);
+    document.removeEventListener("click", retryAfterGesture, true);
+    document.removeEventListener("keydown", retryAfterGesture, true);
   };
 
-  document.addEventListener("pointerdown", startOnFirstInteraction, true);
-  document.addEventListener("touchend", startOnFirstInteraction, true);
-  document.addEventListener("click", startOnFirstInteraction, true);
-  document.addEventListener("keydown", startOnFirstInteraction, true);
+  document.addEventListener("pointerdown", retryAfterGesture, true);
+  document.addEventListener("touchend", retryAfterGesture, true);
+  document.addEventListener("click", retryAfterGesture, true);
+  document.addEventListener("keydown", retryAfterGesture, true);
 })();
