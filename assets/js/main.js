@@ -11,6 +11,7 @@
   const scrim = document.getElementById("menu-scrim");
 
   let soundEnabled = false;
+  let playPending = false;
   let fadeTimer = null;
   let fadeScheduled = false;
   const splashStartedAt = performance.now();
@@ -50,31 +51,34 @@
 
     const step = (now) => {
       const progress = Math.min(1, (now - startedAt) / duration);
-      audio.volume = Math.max(0, startVolume + (0.2 - startVolume) * progress);
+      audio.volume = Math.max(0.2, startVolume + (0.2 - startVolume) * progress);
       if (progress < 1) fadeTimer = requestAnimationFrame(step);
     };
     fadeTimer = requestAnimationFrame(step);
   }
 
-  function scheduleSplashFade() {
+  function scheduleSplashFade(playStartedAt) {
     if (fadeScheduled) return;
     fadeScheduled = true;
-    const elapsed = performance.now() - splashStartedAt;
-    const remaining = Math.max(0, splashDuration - elapsed);
+    const remaining = Math.max(0, splashDuration - (playStartedAt - splashStartedAt));
     window.setTimeout(fadeToTwentyPercent, remaining);
   }
 
   async function startSound() {
-    if (!audio || soundEnabled) return;
+    if (!audio || soundEnabled || playPending) return;
+    playPending = true;
     try {
+      audio.muted = false;
       audio.volume = 1;
       await audio.play();
       soundEnabled = true;
       updateSoundButton();
-      scheduleSplashFade();
+      scheduleSplashFade(performance.now());
     } catch {
       soundEnabled = false;
       updateSoundButton();
+    } finally {
+      playPending = false;
     }
   }
   function stopSound() {
@@ -120,7 +124,21 @@
 
   updateSoundButton();
 
-  // Try autoplay. If blocked, the first user interaction on the splash retries playback.
+  // Attempt autoplay; browsers may block it until a trusted user gesture.
   startSound();
-  splash.addEventListener("pointerdown", startSound, { once: true });
+
+  // Capture the first real interaction anywhere on the page, including the splash.
+  const startOnFirstInteraction = () => {
+    if (!soundEnabled) startSound();
+    if (soundEnabled || !playPending) {
+      document.removeEventListener("pointerdown", startOnFirstInteraction, true);
+      document.removeEventListener("touchend", startOnFirstInteraction, true);
+      document.removeEventListener("click", startOnFirstInteraction, true);
+      document.removeEventListener("keydown", startOnFirstInteraction, true);
+    }
+  };
+  document.addEventListener("pointerdown", startOnFirstInteraction, true);
+  document.addEventListener("touchend", startOnFirstInteraction, true);
+  document.addEventListener("click", startOnFirstInteraction, true);
+  document.addEventListener("keydown", startOnFirstInteraction, true);
 })();
