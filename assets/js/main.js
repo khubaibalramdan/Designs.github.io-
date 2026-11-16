@@ -53,6 +53,8 @@
     fadeTimer = requestAnimationFrame(step);
   }
 
+  let fadeStarted = false;
+
   async function startSound() {
     if (!audio) return;
     try {
@@ -60,7 +62,11 @@
       await audio.play();
       soundEnabled = true;
       updateSoundButton();
-      window.setTimeout(fadeToTwentyPercent, 2250);
+      if (!fadeStarted) {
+        fadeStarted = true;
+        const remaining = Math.max(0, 2250 - performance.now());
+        window.setTimeout(fadeToTwentyPercent, remaining);
+      }
     } catch {
       soundEnabled = false;
       updateSoundButton();
@@ -109,4 +115,13 @@
   }, 2250);
 
   updateSoundButton();
+
+  // Attempt autoplay with the splash; browsers may require a user gesture.
+  startSound();
+  window.setTimeout(() => {
+    if (soundEnabled && !fadeStarted) {
+      fadeStarted = true;
+      fadeToTwentyPercent();
+    }
+  }, 2250);
 })();
