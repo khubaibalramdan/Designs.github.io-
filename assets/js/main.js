@@ -3,6 +3,7 @@
 
   const splash = document.getElementById("splash");
   const app = document.getElementById("app");
+  const splashAudio = document.getElementById("splash-audio");
   const audio = document.getElementById("ambient-audio");
   const soundButton = document.getElementById("sound-trigger");
   const menuButton = document.getElementById("menu-trigger");
@@ -10,12 +11,10 @@
   const menuClose = document.getElementById("menu-close");
   const scrim = document.getElementById("menu-scrim");
 
+  const AMBIENT_VOLUME = 0.16;
   let soundEnabled = false;
   let playPending = false;
-  let fadeTimer = null;
-  let fadeScheduled = false;
-  const splashStartedAt = performance.now();
-  const splashDuration = 2250;
+  let splashSequenceStarted = false;
 
   function closeMenu() {
     menu.classList.remove("is-open");
@@ -42,38 +41,13 @@
     soundButton.setAttribute("aria-label", soundEnabled ? "كتم الصوت" : "تشغيل الصوت");
   }
 
-  function fadeToTwentyPercent() {
-    if (!audio || !soundEnabled) return;
-    const startedAt = performance.now();
-    const startVolume = audio.volume;
-    const duration = 2000;
-    if (fadeTimer) cancelAnimationFrame(fadeTimer);
-
-    const step = (now) => {
-      const progress = Math.min(1, (now - startedAt) / duration);
-      audio.volume = Math.max(0.2, startVolume + (0.2 - startVolume) * progress);
-      if (progress < 1) fadeTimer = requestAnimationFrame(step);
-    };
-    fadeTimer = requestAnimationFrame(step);
-  }
-
-  function scheduleSplashFade(playStartedAt) {
-    if (fadeScheduled) return;
-    fadeScheduled = true;
-    const remaining = Math.max(0, splashDuration - (playStartedAt - splashStartedAt));
-    window.setTimeout(fadeToTwentyPercent, remaining);
-  }
-
-  async function startSound() {
-    if (!audio || soundEnabled || playPending) return;
+  async function startAmbient() {
+    if (!audio || !soundEnabled || playPending) return;
     playPending = true;
     try {
       audio.muted = false;
-      audio.volume = 1;
+      audio.volume = AMBIENT_VOLUME;
       await audio.play();
-      soundEnabled = true;
-      updateSoundButton();
-      scheduleSplashFade(performance.now());
     } catch {
       soundEnabled = false;
       updateSoundButton();
@@ -81,11 +55,47 @@
       playPending = false;
     }
   }
+
+  async function startInitialAudio() {
+    if (splashSequenceStarted || !audio || !soundEnabled) return;
+    splashSequenceStarted = true;
+
+    const splashIsVisible = splash && !splash.classList.contains("is-hidden");
+    if (splashIsVisible && splashAudio) {
+      try {
+        splashAudio.currentTime = 0;
+        splashAudio.muted = false;
+        await splashAudio.play();
+        splashAudio.addEventListener("ended", () => {
+          if (soundEnabled) startAmbient();
+        }, { once: true });
+        return;
+      } catch {
+        // If the short intro tone cannot play, continue with the ambient track.
+      }
+    }
+
+    await startAmbient();
+  }
+
+  function enableSound() {
+    if (soundEnabled) return;
+    soundEnabled = true;
+    updateSoundButton();
+    if (splashSequenceStarted) startAmbient();
+    else startInitialAudio();
+  }
+
   function stopSound() {
-    if (!audio) return;
-    audio.pause();
-    audio.currentTime = 0;
     soundEnabled = false;
+    if (audio) {
+      audio.pause();
+      audio.currentTime = 0;
+    }
+    if (splashAudio) {
+      splashAudio.pause();
+      splashAudio.currentTime = 0;
+    }
     updateSoundButton();
   }
 
@@ -106,12 +116,12 @@
 
   soundButton.addEventListener("click", () => {
     if (soundEnabled) stopSound();
-    else startSound();
+    else enableSound();
   });
 
   window.addEventListener("pagehide", stopSound);
   window.addEventListener("pageshow", () => {
-    if (audio && audio.paused) {
+    if (audio && audio.paused && soundEnabled) {
       soundEnabled = false;
       updateSoundButton();
     }
@@ -124,19 +134,19 @@
 
   updateSoundButton();
 
-  // Attempt autoplay; browsers may block it until a trusted user gesture.
-  startSound();
-
-  // Capture the first real interaction anywhere on the page, including the splash.
-  const startOnFirstInteraction = async () => {
-    if (!soundEnabled) await startSound();
-    if (soundEnabled) {
-      document.removeEventListener("pointerdown", startOnFirstInteraction, true);
-      document.removeEventListener("touchend", startOnFirstInteraction, true);
-      document.removeEventListener("click", startOnFirstInteraction, true);
-      document.removeEventListener("keydown", startOnFirstInteraction, true);
+  const startOnFirstInteraction = (event) => {
+    if (event.target instanceof Element && event.target.closest("#sound-trigger")) return;
+    if (!splashSequenceStarted && !soundEnabled) {
+      soundEnabled = true;
+      updateSoundButton();
+      startInitialAudio();
     }
+    document.removeEventListener("pointerdown", startOnFirstInteraction, true);
+    document.removeEventListener("touchend", startOnFirstInteraction, true);
+    document.removeEventListener("click", startOnFirstInteraction, true);
+    document.removeEventListener("keydown", startOnFirstInteraction, true);
   };
+
   document.addEventListener("pointerdown", startOnFirstInteraction, true);
   document.addEventListener("touchend", startOnFirstInteraction, true);
   document.addEventListener("click", startOnFirstInteraction, true);
