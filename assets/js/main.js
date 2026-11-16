@@ -12,10 +12,17 @@
   const scrim = document.getElementById("menu-scrim");
 
   const AMBIENT_VOLUME = 0.16;
-  let soundEnabled = true;
-  let splashStarted = false;
+  const SOUND = Object.freeze({
+    STARTING: "starting",
+    SPLASH: "splash",
+    AMBIENT: "ambient",
+    BLOCKED: "blocked",
+    MUTED: "muted"
+  });
+
+  let soundState = SOUND.STARTING;
   let splashToneFinished = false;
-  let ambientPending = false;
+  let playRequest = 0;
 
   function closeMenu() {
     menu.classList.remove("is-open");
@@ -37,49 +44,13 @@
   }
 
   function updateSoundButton() {
-    soundButton.classList.toggle("is-muted", !soundEnabled);
-    soundButton.setAttribute("aria-pressed", String(soundEnabled));
-    soundButton.setAttribute("aria-label", soundEnabled ? "كتم الصوت" : "تشغيل الصوت");
+    const isPlaying = soundState === SOUND.SPLASH || soundState === SOUND.AMBIENT;
+    soundButton.classList.toggle("is-muted", !isPlaying);
+    soundButton.setAttribute("aria-pressed", String(isPlaying));
+    soundButton.setAttribute("aria-label", isPlaying ? "كتم الصوت" : "تشغيل الصوت");
   }
 
-  async function startAmbient() {
-    if (!ambientAudio || !soundEnabled || !splashToneFinished || ambientPending) return;
-    ambientPending = true;
-    try {
-      ambientAudio.muted = false;
-      ambientAudio.volume = AMBIENT_VOLUME;
-      await ambientAudio.play();
-    } catch {
-      soundEnabled = false;
-      updateSoundButton();
-    } finally {
-      ambientPending = false;
-    }
-  }
-
-  async function attemptAutomaticSound() {
-    if (!soundEnabled || splashStarted) return;
-
-    const splashIsVisible = splash && !splash.classList.contains("is-hidden");
-    if (!splashIsVisible || !splashAudio) {
-      splashToneFinished = true;
-      await startAmbient();
-      return;
-    }
-
-    splashAudio.muted = false;
-    splashAudio.currentTime = 0;
-    try {
-      await splashAudio.play();
-      splashStarted = true;
-    } catch {
-      // Browser autoplay policy blocked playback; retry on the first user gesture.
-      splashStarted = false;
-    }
-  }
-
-  function stopSound() {
-    soundEnabled = false;
+  function pauseAllAudio() {
     if (splashAudio) {
       splashAudio.pause();
       splashAudio.currentTime = 0;
@@ -88,17 +59,76 @@
       ambientAudio.pause();
       ambientAudio.currentTime = 0;
     }
-    splashStarted = false;
+  }
+
+  async function playAmbient(requestId) {
+    if (requestId !== playRequest || soundState === SOUND.MUTED) return;
+    splashToneFinished = true;
+    if (!ambientAudio) {
+      soundState = SOUND.BLOCKED;
+      updateSoundButton();
+      return;
+    }
+
+    try {
+      ambientAudio.muted = false;
+      ambientAudio.volume = AMBIENT_VOLUME;
+      await ambientAudio.play();
+      if (requestId !== playRequest || soundState === SOUND.MUTED) {
+        ambientAudio.pause();
+        return;
+      }
+      soundState = SOUND.AMBIENT;
+      updateSoundButton();
+    } catch {
+      if (requestId === playRequest && soundState !== SOUND.MUTED) {
+        soundState = SOUND.BLOCKED;
+        updateSoundButton();
+      }
+    }
+  }
+
+  async function startSound() {
+    if (soundState === SOUND.SPLASH || soundState === SOUND.AMBIENT) return;
+    const requestId = ++playRequest;
+    pauseAllAudio();
+
+    const splashVisible = splash && !splash.classList.contains("is-hidden");
+    if (!splashVisible || !splashAudio || splashToneFinished) {
+      await playAmbient(requestId);
+      return;
+    }
+
+    try {
+      splashAudio.muted = false;
+      await splashAudio.play();
+      if (requestId !== playRequest || soundState === SOUND.MUTED) {
+        splashAudio.pause();
+        return;
+      }
+      soundState = SOUND.SPLASH;
+      updateSoundButton();
+    } catch {
+      if (requestId === playRequest && soundState !== SOUND.MUTED) {
+        soundState = SOUND.BLOCKED;
+        updateSoundButton();
+      }
+    }
+  }
+
+  function muteSound() {
+    ++playRequest;
+    soundState = SOUND.MUTED;
+    pauseAllAudio();
     updateSoundButton();
   }
 
-  function enableSound() {
-    if (soundEnabled) return;
-    soundEnabled = true;
-    updateSoundButton();
-    if (splashStarted) return;
-    if (splashToneFinished) startAmbient();
-    else attemptAutomaticSound();
+  function toggleSound() {
+    if (soundState === SOUND.SPLASH || soundState === SOUND.AMBIENT) {
+      muteSound();
+    } else {
+      startSound();
+    }
   }
 
   menuButton.addEventListener("click", () => {
@@ -116,30 +146,25 @@
     }
   });
 
-  soundButton.addEventListener("click", () => {
-    if (soundEnabled) stopSound();
-    else enableSound();
-  });
+  soundButton.addEventListener("click", toggleSound);
 
   if (splashAudio) {
     splashAudio.addEventListener("ended", () => {
-      splashStarted = false;
+      if (soundState !== SOUND.SPLASH) return;
+      const requestId = playRequest;
       splashToneFinished = true;
-      if (soundEnabled) startAmbient();
+      playAmbient(requestId);
     });
     splashAudio.addEventListener("error", () => {
-      splashStarted = false;
-      splashToneFinished = true;
-      if (soundEnabled) startAmbient();
+      if (soundState !== SOUND.SPLASH && soundState !== SOUND.STARTING) return;
+      const requestId = playRequest;
+      playAmbient(requestId);
     });
   }
 
-  window.addEventListener("pagehide", stopSound);
-  window.addEventListener("pageshow", () => {
-    if (ambientAudio && ambientAudio.paused && splashToneFinished) {
-      soundEnabled = false;
-      updateSoundButton();
-    }
+  window.addEventListener("pagehide", () => {
+    ++playRequest;
+    pauseAllAudio();
   });
 
   window.setTimeout(() => {
@@ -149,21 +174,17 @@
 
   updateSoundButton();
 
-  // Attempt playback immediately. If Chrome blocks autoplay, retry on the first real interaction.
-  attemptAutomaticSound();
+  // Try autoplay once. If the browser rejects it, the first user gesture retries playback.
+  startSound();
 
-  const retryAfterGesture = (event) => {
+  function retryBlockedPlayback(event) {
     if (event.target instanceof Element && event.target.closest("#sound-trigger")) return;
-    if (!soundEnabled || splashStarted || splashToneFinished) return;
-    attemptAutomaticSound();
-    document.removeEventListener("pointerdown", retryAfterGesture, true);
-    document.removeEventListener("touchend", retryAfterGesture, true);
-    document.removeEventListener("click", retryAfterGesture, true);
-    document.removeEventListener("keydown", retryAfterGesture, true);
-  };
+    if (soundState !== SOUND.BLOCKED) return;
+    startSound();
+    document.removeEventListener("pointerdown", retryBlockedPlayback, true);
+    document.removeEventListener("keydown", retryBlockedPlayback, true);
+  }
 
-  document.addEventListener("pointerdown", retryAfterGesture, true);
-  document.addEventListener("touchend", retryAfterGesture, true);
-  document.addEventListener("click", retryAfterGesture, true);
-  document.addEventListener("keydown", retryAfterGesture, true);
+  document.addEventListener("pointerdown", retryBlockedPlayback, true);
+  document.addEventListener("keydown", retryBlockedPlayback, true);
 })();
