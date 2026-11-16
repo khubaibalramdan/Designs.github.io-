@@ -118,6 +118,11 @@
 
   // Attempt autoplay with the splash; browsers may require a user gesture.
   startSound();
+
+  // If autoplay is blocked, the first tap anywhere on the splash starts audio.
+  splash.addEventListener("pointerdown", () => {
+    if (!soundEnabled) startSound();
+  }, { once: true });
   window.setTimeout(() => {
     if (soundEnabled && !fadeStarted) {
       fadeStarted = true;
