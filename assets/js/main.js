@@ -12,6 +12,9 @@
 
   let soundEnabled = false;
   let fadeTimer = null;
+  let fadeScheduled = false;
+  const splashStartedAt = performance.now();
+  const splashDuration = 2250;
 
   function closeMenu() {
     menu.classList.remove("is-open");
@@ -39,7 +42,7 @@
   }
 
   function fadeToTwentyPercent() {
-    if (!audio) return;
+    if (!audio || !soundEnabled) return;
     const startedAt = performance.now();
     const startVolume = audio.volume;
     const duration = 2000;
@@ -53,26 +56,27 @@
     fadeTimer = requestAnimationFrame(step);
   }
 
-  let fadeStarted = false;
+  function scheduleSplashFade() {
+    if (fadeScheduled) return;
+    fadeScheduled = true;
+    const elapsed = performance.now() - splashStartedAt;
+    const remaining = Math.max(0, splashDuration - elapsed);
+    window.setTimeout(fadeToTwentyPercent, remaining);
+  }
 
   async function startSound() {
-    if (!audio) return;
+    if (!audio || soundEnabled) return;
     try {
       audio.volume = 1;
       await audio.play();
       soundEnabled = true;
       updateSoundButton();
-      if (!fadeStarted) {
-        fadeStarted = true;
-        const remaining = Math.max(0, 2250 - performance.now());
-        window.setTimeout(fadeToTwentyPercent, remaining);
-      }
+      scheduleSplashFade();
     } catch {
       soundEnabled = false;
       updateSoundButton();
     }
   }
-
   function stopSound() {
     if (!audio) return;
     audio.pause();
@@ -116,17 +120,7 @@
 
   updateSoundButton();
 
-  // Attempt autoplay with the splash; browsers may require a user gesture.
+  // Try autoplay. If blocked, the first user interaction on the splash retries playback.
   startSound();
-
-  // If autoplay is blocked, the first tap anywhere on the splash starts audio.
-  splash.addEventListener("pointerdown", () => {
-    if (!soundEnabled) startSound();
-  }, { once: true });
-  window.setTimeout(() => {
-    if (soundEnabled && !fadeStarted) {
-      fadeStarted = true;
-      fadeToTwentyPercent();
-    }
-  }, 2250);
+  splash.addEventListener("pointerdown", startSound, { once: true });
 })();
