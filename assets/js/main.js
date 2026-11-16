@@ -61,7 +61,9 @@
     if (!soundEnabled || sequenceStarted) return;
     sequenceStarted = true;
 
-    if (splashToneFinished) {
+    const splashIsVisible = splash && !splash.classList.contains("is-hidden");
+    if (splashToneFinished || !splashIsVisible) {
+      splashToneFinished = true;
       await startAmbient();
       return;
     }
@@ -160,7 +162,7 @@
   updateSoundButton();
 
   const startOnFirstInteraction = (event) => {
-    if (event.target === soundButton || soundEnabled || sequenceStarted) return;
+    if ((event.target instanceof Element && event.target.closest("#sound-trigger")) || soundEnabled || sequenceStarted) return;
     enableSound();
     document.removeEventListener("pointerdown", startOnFirstInteraction, true);
     document.removeEventListener("touchend", startOnFirstInteraction, true);
