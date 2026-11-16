@@ -4,7 +4,7 @@
   const splash = document.getElementById("splash");
   const app = document.getElementById("app");
   const splashAudio = document.getElementById("splash-audio");
-  const audio = document.getElementById("ambient-audio");
+  const ambientAudio = document.getElementById("ambient-audio");
   const soundButton = document.getElementById("sound-trigger");
   const menuButton = document.getElementById("menu-trigger");
   const menu = document.getElementById("side-menu");
@@ -13,8 +13,9 @@
 
   const AMBIENT_VOLUME = 0.16;
   let soundEnabled = false;
-  let playPending = false;
-  let splashSequenceStarted = false;
+  let sequenceStarted = false;
+  let splashToneFinished = false;
+  let ambientPending = false;
 
   function closeMenu() {
     menu.classList.remove("is-open");
@@ -42,61 +43,74 @@
   }
 
   async function startAmbient() {
-    if (!audio || !soundEnabled || playPending) return;
-    playPending = true;
+    if (!ambientAudio || !soundEnabled || !splashToneFinished || ambientPending) return;
+    ambientPending = true;
     try {
-      audio.muted = false;
-      audio.volume = AMBIENT_VOLUME;
-      await audio.play();
+      ambientAudio.muted = false;
+      ambientAudio.volume = AMBIENT_VOLUME;
+      await ambientAudio.play();
     } catch {
       soundEnabled = false;
       updateSoundButton();
     } finally {
-      playPending = false;
+      ambientPending = false;
     }
   }
 
-  async function startInitialAudio() {
-    if (splashSequenceStarted || !audio || !soundEnabled) return;
-    splashSequenceStarted = true;
+  async function startSoundSequence() {
+    if (!soundEnabled || sequenceStarted) return;
+    sequenceStarted = true;
 
-    const splashIsVisible = splash && !splash.classList.contains("is-hidden");
-    if (splashIsVisible && splashAudio) {
-      try {
-        splashAudio.currentTime = 0;
-        splashAudio.muted = false;
-        await splashAudio.play();
-        splashAudio.addEventListener("ended", () => {
-          if (soundEnabled) startAmbient();
-        }, { once: true });
-        return;
-      } catch {
-        // If the short intro tone cannot play, continue with the ambient track.
-      }
+    if (splashToneFinished) {
+      await startAmbient();
+      return;
     }
 
-    await startAmbient();
+    if (!splashAudio) {
+      splashToneFinished = true;
+      await startAmbient();
+      return;
+    }
+
+    splashAudio.muted = false;
+    splashAudio.currentTime = 0;
+    try {
+      await splashAudio.play();
+    } catch {
+      splashToneFinished = true;
+      await startAmbient();
+    }
+  }
+
+  function stopSound() {
+    soundEnabled = false;
+    if (splashAudio) {
+      splashAudio.pause();
+      splashAudio.currentTime = 0;
+    }
+    if (ambientAudio) {
+      ambientAudio.pause();
+      ambientAudio.currentTime = 0;
+    }
+    updateSoundButton();
   }
 
   function enableSound() {
     if (soundEnabled) return;
     soundEnabled = true;
     updateSoundButton();
-    if (splashSequenceStarted) startAmbient();
-    else startInitialAudio();
-  }
-
-  function stopSound() {
-    soundEnabled = false;
-    if (audio) {
-      audio.pause();
-      audio.currentTime = 0;
+    if (sequenceStarted && splashAudio && !splashToneFinished) {
+      splashAudio.play().catch(() => {
+        splashToneFinished = true;
+        startAmbient();
+      });
+      return;
     }
-    if (splashAudio) {
-      splashAudio.pause();
-      splashAudio.currentTime = 0;
+    if (sequenceStarted && splashToneFinished) {
+      startAmbient();
+      return;
     }
-    updateSoundButton();
+    startSoundSequence();
   }
 
   menuButton.addEventListener("click", () => {
@@ -119,9 +133,20 @@
     else enableSound();
   });
 
+  if (splashAudio) {
+    splashAudio.addEventListener("ended", () => {
+      splashToneFinished = true;
+      if (soundEnabled) startAmbient();
+    });
+    splashAudio.addEventListener("error", () => {
+      splashToneFinished = true;
+      if (soundEnabled) startAmbient();
+    });
+  }
+
   window.addEventListener("pagehide", stopSound);
   window.addEventListener("pageshow", () => {
-    if (audio && audio.paused && soundEnabled) {
+    if (ambientAudio && ambientAudio.paused) {
       soundEnabled = false;
       updateSoundButton();
     }
@@ -135,12 +160,8 @@
   updateSoundButton();
 
   const startOnFirstInteraction = (event) => {
-    if (event.target instanceof Element && event.target.closest("#sound-trigger")) return;
-    if (!splashSequenceStarted && !soundEnabled) {
-      soundEnabled = true;
-      updateSoundButton();
-      startInitialAudio();
-    }
+    if (event.target === soundButton || soundEnabled || sequenceStarted) return;
+    enableSound();
     document.removeEventListener("pointerdown", startOnFirstInteraction, true);
     document.removeEventListener("touchend", startOnFirstInteraction, true);
     document.removeEventListener("click", startOnFirstInteraction, true);
