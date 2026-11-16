@@ -4,22 +4,99 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#090909">
-  <meta name="description" content="KT | ABO TALA | KH">
+  <meta name="description" content="KT | ABO TALA | KH — حلول رقمية وتصميم وتطوير">
   <title>KT | ABO TALA | KH</title>
+  <link rel="preload" href="./assets/css/main.css" as="style">
   <link rel="stylesheet" href="./assets/css/main.css">
   <script src="./assets/js/main.js" defer></script>
 </head>
 <body>
-  <main id="app" class="app" aria-label="KT">
-    <div class="app-shell">
-      <header class="site-header">
-        <a class="brand" href="./" aria-label="KT - الرئيسية">KT</a>
-      </header>
-      <section class="home" aria-labelledby="site-title">
-        <h1 id="site-title">KT</h1>
-        <p class="site-subtitle">ABO TALA | KH</p>
+  <div class="splash" id="splash" aria-label="KT">
+    <div class="splash-mark" aria-hidden="true">KT</div>
+    <div class="splash-name">ABO TALA <span>|</span> KH</div>
+    <div class="splash-line"></div>
+  </div>
+
+  <main class="app" id="app">
+    <div class="backdrop" aria-hidden="true"></div>
+    <header class="site-header">
+      <a class="brand-mark" href="#home" aria-label="KT — الرئيسية">KT</a>
+      <span class="brand-caption">ABO TALA <i>|</i> KH</span>
+    </header>
+
+    <section class="home" id="home" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow">DIGITAL EXPERIENCE · CREATIVE STUDIO</p>
+        <h1 id="hero-title">نحو حضور<br><span>رقمي مختلف</span></h1>
+        <p class="hero-description">حلول رقمية، تطوير تطبيقات، وتصميم احترافي بهوية واضحة وتجربة متقنة.</p>
+      </div>
+
+      <section class="projects" aria-labelledby="projects-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">SELECTED PROJECT</p>
+            <h2 id="projects-title">مشاريعنا</h2>
+          </div>
+          <span class="project-count">01 <i>/</i> 01</span>
+        </div>
+        <div class="project-rail" aria-label="مشاريع KT">
+          <article class="project-card is-active">
+            <div class="project-card-art" aria-hidden="true">
+              <span class="project-orbit orbit-one"></span>
+              <span class="project-orbit orbit-two"></span>
+              <span class="project-monogram">ش</span>
+              <span class="project-art-label">ABNAA AL SHAMAL</span>
+            </div>
+            <div class="project-card-info">
+              <div>
+                <span class="project-kicker">DIGITAL PLATFORM</span>
+                <h3>أبناء الشمال</h3>
+                <p>منظومة رقمية لخدمات العميل والكابتن</p>
+              </div>
+              <span class="project-index">01</span>
+            </div>
+            <div class="project-card-foot">
+              <span>مشروع متاح</span>
+              <span class="gold-dot"></span>
+            </div>
+          </article>
+        </div>
+        <p class="rail-hint">اسحب لاستعراض المشاريع عند توفر مشاريع إضافية</p>
       </section>
-    </div>
+    </section>
+
+    <nav class="quick-controls" aria-label="عناصر التحكم">
+      <button class="glass-control menu-trigger" id="menu-trigger" type="button" aria-label="فتح القائمة" aria-expanded="false" aria-controls="side-menu">
+        <span class="menu-glyph" aria-hidden="true"><i></i><i></i><i></i></span>
+      </button>
+      <button class="glass-control sound-trigger" id="sound-trigger" type="button" aria-label="تشغيل الصوت" aria-pressed="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h4l5 4V6l-5 4H4Z"></path><path class="sound-wave" d="M16 9a5 5 0 0 1 0 6M18.5 6.5a8.5 8.5 0 0 1 0 11"></path><path class="sound-muted" d="m16 9 5 6m0-6-5 6"></path></svg>
+      </button>
+    </nav>
+
+    <div class="menu-scrim" id="menu-scrim" hidden></div>
+    <aside class="side-menu" id="side-menu" aria-hidden="true" aria-label="القائمة الرئيسية">
+      <div class="menu-top">
+        <div class="menu-brand">KT <span>ABO TALA | KH</span></div>
+        <button class="menu-close" id="menu-close" type="button" aria-label="إغلاق القائمة">×</button>
+      </div>
+      <p class="menu-label">استكشف</p>
+      <div class="menu-links">
+        <a href="#home">الرئيسية <span>01</span></a>
+        <a href="#digital-solutions">حلول رقمية <span>02</span></a>
+        <a href="#app-development">تطوير تطبيقات <span>03</span></a>
+        <a href="#professional-design">تصميم احترافي <span>04</span></a>
+        <a href="#custom-software">برامج مخصصة <span>05</span></a>
+        <a href="#design-services">خدمات التصميم <span>06</span></a>
+        <a href="#contact">التواصل <span>07</span></a>
+        <a href="#about">من أنا <span>08</span></a>
+      </div>
+      <div class="menu-footer">KT <span>—</span> DIGITAL & CREATIVE</div>
+    </aside>
   </main>
+
+  <audio id="ambient-audio" preload="none" loop playsinline>
+    <source src="./assets/media/dragon-studio-ambient-meditation-634323.mp3" type="audio/mpeg">
+  </audio>
 </body>
 </html>
