@@ -15,6 +15,7 @@
 
   function closeMenu() {
     menu.classList.remove("is-open");
+    menu.hidden = true;
     menu.setAttribute("aria-hidden", "true");
     menuButton.setAttribute("aria-expanded", "false");
     document.body.classList.remove("menu-open");
@@ -22,6 +23,7 @@
   }
 
   function openMenu() {
+    menu.hidden = false;
     menu.classList.add("is-open");
     menu.setAttribute("aria-hidden", "false");
     menuButton.setAttribute("aria-expanded", "true");
