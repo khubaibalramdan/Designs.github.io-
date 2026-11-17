@@ -165,7 +165,7 @@ svg{display:block}
 .sparks{position:absolute;inset:0;pointer-events:none}
 .sparks i{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px;border-radius:50%;background:#ffe2a0;box-shadow:0 0 8px #ffc65a;opacity:0}
 .swiper-wrapper{pointer-events:none}.swiper-slide{pointer-events:auto}
-.app:not(.is-loading):not(.is-done):not(.is-started):not(.is-sent) .ring{display:none}
+.app:not(.is-loading):not(.is-done) .ring{display:none}
 
 /* ---- QR ---- */
 .ctrls{display:flex;gap:8px}
@@ -186,19 +186,7 @@ svg{display:block}
 .qr-note{margin:16px 0 4px;color:var(--text);font-size:14px}
 .qr-brand{justify-content:center;gap:4px;margin-top:10px;font-size:15px;color:var(--text)}
 .qr-brand small{font:500 11px Montserrat;letter-spacing:.24em;color:var(--mute);margin:0 4px}
-/* Download handed to the phone: a golden ring spins around the icon */
-/* Download started: a golden comet runs around the icon's own frame */
-.app.is-started .ring{display:block}
-.app.is-started .ring rect{stroke-dasharray:22 78;animation:comet 1.25s linear infinite;stroke-width:4}
-.app.is-started .ring::before{content:none}
-.app.is-started .app-icon img{animation:breathe 1.25s ease-in-out infinite}
-@keyframes comet{to{stroke-dashoffset:-100}}
-@keyframes breathe{50%{filter:brightness(1.12) drop-shadow(0 0 10px rgba(255,210,120,.55))}}
-.app.is-sent .count{display:grid;background:rgba(10,7,5,.45);font-size:40px;color:var(--gold-hi)}
-.app.is-sent .count::after{content:"✓"}
-.app.is-sent .ring{display:block}
-.app.is-sent .ring rect{stroke-dasharray:100 0}
-@keyframes spin{to{transform:rotate(1turn)}}
+.app.phone-dl .cancel{display:none}
 
 /* ---- Install as an app ---- */
 .brand-side{display:flex;align-items:center;gap:8px}

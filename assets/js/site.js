@@ -180,18 +180,31 @@
     let asset;
     try { asset = assetFor(await latest(), who); } catch (e) { asset = null; }
     if (!asset) { jobs.delete(app); reset(app); status.textContent = "ملف التطبيق غير متوفر حالياً، جرّب بعد قليل"; return; }
-    // GitHub's file server does not let a page read release files, so the phone's own downloader takes over:
-    // the icon shows a golden spin while it starts, and the real percentage is in the phone's download notification.
-    jobs.delete(app);
-    // A hidden frame fetches the file, so the page itself never moves to another screen.
+    // A hidden frame fetches the file (GitHub's file server lets the phone download it, not the page read it),
+    // so the page itself never moves to another screen.
     const f = document.createElement("iframe");
     f.hidden = true; f.setAttribute("aria-hidden", "true"); f.src = asset.browser_download_url;
     document.body.appendChild(f); setTimeout(() => f.remove(), 120000);
-    app.classList.add("is-started"); app.querySelector("[data-num]").textContent = "";
-    shine(card);
-    status.textContent = "جارٍ التنزيل… تابع النسبة من إشعارات الجوال، وبعدها افتح الملف لتثبيته";
-    setTimeout(() => { app.classList.replace("is-started", "is-sent"); sparkle(app); Sfx.done(); }, 7000);
-    setTimeout(() => { app.classList.remove("is-sent"); reset(app); }, 10000);
+    // Estimated counter: the phone downloads the file itself, so the page cannot read the real progress.
+    // It runs 1 -> 99 over the time the file should take at this phone's connection speed, then the gold check.
+    const mbps = (navigator.connection && navigator.connection.downlink) || 12;      // the phone's own estimate
+    const bytesPerSec = Math.max(150e3, mbps * 1e6 / 8 * 0.7);
+    const total = Math.min(240, Math.max(8, (asset.size || 65e6) / bytesPerSec)) * 1000;
+    const t0 = performance.now();
+    shine(card); show(app, 1); app.classList.add("phone-dl");
+    status.textContent = "جارٍ التنزيل… النسبة تقريبية، والنسبة الدقيقة بإشعار الجوال";
+    const tick = () => {
+      if (!jobs.has(app)) return;
+      const k = Math.min(1, (performance.now() - t0) / total);
+      const eased = 1 - Math.pow(1 - k, 1.6);
+      show(app, Math.max(1, Math.min(99, Math.round(eased * 99))));
+      if (k < 1) { requestAnimationFrame(tick); return; }
+      jobs.delete(app); finish(app);
+      status.textContent = "خلص التنزيل تقريباً. افتح الملف من الإشعارات لتثبيته";
+      setTimeout(() => { reset(app); app.classList.remove("phone-dl"); }, 4000);
+    };
+    jobs.set(app, { abort() { jobs.delete(app); } });
+    requestAnimationFrame(tick);
   };
 
   card.querySelectorAll(".app").forEach(app => {
