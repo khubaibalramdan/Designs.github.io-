@@ -111,8 +111,8 @@
   // Project deck: centred card, side cards visible, swipe left/right, dots.
   const deck = new Swiper("#deck", {
     effect: "coverflow", centeredSlides: true, slidesPerView: "auto", initialSlide: 1, spaceBetween: 0,
-    grabCursor: true, noSwipingSelector: "button",
-    coverflowEffect: { rotate: 14, stretch: 0, depth: 110, modifier: 1, slideShadows: false },
+    grabCursor: true, noSwipingSelector: "button", speed: 380, threshold: 6, resistanceRatio: .6,
+    coverflowEffect: { rotate: 0, stretch: 0, depth: 90, modifier: 1, slideShadows: false },
     pagination: { el: ".swiper-pagination", clickable: true }
   });
 
@@ -191,7 +191,7 @@
     const who = app.dataset.app;
     app.querySelector("[data-get]").addEventListener("click", () => {
       if (jobs.has(app)) return;
-      if (card.dataset.platform === "ios") { Sfx.tap(); location.href = `./${who}/`; return; }
+      if (card.dataset.platform === "ios") { Sfx.tap(); const w = window.open(`./${who}/`, "_blank", "noopener"); if (!w) location.href = `./${who}/`; return; }
       if (q.has("demo")) { // screenshots and videos only
         let v = 1; const t = setInterval(() => { show(app, v); if (++v > 100) { clearInterval(t); jobs.delete(app); finish(app); status.textContent = "اكتمل التنزيل"; } }, 40);
         jobs.set(app, { abort: () => clearInterval(t) }); Sfx.tap(); status.textContent = "جارٍ التنزيل…"; return;

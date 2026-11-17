@@ -1,6 +1,6 @@
 // Offline shell for the K♡T page. It answers ONLY for the page's own files listed below;
 // everything else (the iPhone apps in ./rider/ and ./captain/, GitHub downloads, the API) goes straight to the network.
-const VERSION = "kt-1";
+const VERSION = "kt-2";
 const SHELL = [
   "./", "index.html", "manifest.webmanifest",
   "assets/css/site.css", "assets/js/site.js",

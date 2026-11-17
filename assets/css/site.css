@@ -203,3 +203,13 @@ svg{display:block}
 .inst-steps{margin:0;padding:0 22px 0 0;text-align:right;display:grid;gap:10px;font-size:14.5px;line-height:1.7}
 .inst-steps li::marker{color:var(--gold);font-weight:700}
 .inst-steps b{color:var(--gold-hi)}
+
+/* ---- Performance for mid-range phones (smooth swiping) ----
+   Blur behind moving cards and filters on text are re-painted every frame while swiping: removed.
+   The card keeps its look with a slightly denser glass colour. */
+.card{backdrop-filter:none;-webkit-backdrop-filter:none;background:linear-gradient(180deg,rgba(46,31,18,.82),rgba(14,9,6,.9))}
+.project h2,.soon h2,.bar b{background:none;-webkit-background-clip:border-box;background-clip:border-box;color:var(--gold-hi);filter:none;text-shadow:0 1.5px 0 #2a1704,0 4px 12px rgba(0,0,0,.6)}
+.soon-ico svg,.plat svg,.enter svg{filter:none}
+.swiper-slide{will-change:transform;transition:opacity .3s}
+.swiper-slide:not(.swiper-slide-active) .card{filter:none}
+.swiper-slide:not(.swiper-slide-active){opacity:.62}
