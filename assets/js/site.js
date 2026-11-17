@@ -19,7 +19,7 @@
     ambient.play().catch(() => { ambientStarted = false; });
     const t0 = performance.now();
     const step = now => {
-      const k = Math.min(1, (now - t0) / FADE_MS);
+      const k = Math.max(0, Math.min(1, (now - t0) / FADE_MS));
       ambient.volume = AMBIENT_VOL * k;
       if (k < 1) requestAnimationFrame(step);
     };
@@ -53,7 +53,7 @@
   };
 
   enter.addEventListener("click", doEnter);
-  if (q.has("ns")) { splash.remove(); }
+  if (q.has("ns")) { splash.remove(); entered = true; }
   else if (q.has("auto")) setTimeout(doEnter, 1200);
 
   soundBtn.addEventListener("click", () => {
@@ -63,6 +63,50 @@
     soundBtn.setAttribute("aria-label", muted ? "تشغيل الصوت" : "كتم الصوت");
     if (!muted && entered && !splash.isConnected) startAmbient();
   });
+
+
+  // Interface sounds, made in code, tuned to the ambient track (D major): soft bells with a short echo.
+  const Sfx = (() => {
+    let ctx = null, out = null;
+    const init = () => {
+      if (ctx) return ctx.state === "suspended" ? ctx.resume().then(() => ctx) : Promise.resolve(ctx);
+      const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return Promise.resolve(null);
+      ctx = new AC();
+      out = ctx.createGain(); out.gain.value = 1;
+      const echo = ctx.createDelay(); echo.delayTime.value = .19;
+      const fb = ctx.createGain(); fb.gain.value = .26;
+      const tone = ctx.createBiquadFilter(); tone.type = "lowpass"; tone.frequency.value = 2600;
+      const wet = ctx.createGain(); wet.gain.value = .35;
+      out.connect(ctx.destination); out.connect(echo); echo.connect(tone); tone.connect(fb); fb.connect(echo); tone.connect(wet); wet.connect(ctx.destination);
+      return Promise.resolve(ctx);
+    };
+    const bell = (freq, at, gain, len) => {
+      [[1, 1], [2.01, .22], [3.02, .06]].forEach(([m, g]) => {
+        const o = ctx.createOscillator(), v = ctx.createGain();
+        o.type = "sine"; o.frequency.value = freq * m;
+        v.gain.setValueAtTime(0, at);
+        v.gain.linearRampToValueAtTime(gain * g, at + .008);
+        v.gain.exponentialRampToValueAtTime(.0001, at + len / m);
+        o.connect(v); v.connect(out); o.start(at); o.stop(at + len + .05);
+      });
+    };
+    const air = (at, gain) => {
+      const n = ctx.sampleRate * .4, b = ctx.createBuffer(1, n, ctx.sampleRate), d = b.getChannelData(0);
+      for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+      const src = ctx.createBufferSource(); src.buffer = b;
+      const bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.Q.value = 1.4;
+      bp.frequency.setValueAtTime(500, at); bp.frequency.exponentialRampToValueAtTime(2600, at + .32);
+      const v = ctx.createGain(); v.gain.setValueAtTime(0, at); v.gain.linearRampToValueAtTime(gain, at + .12); v.gain.exponentialRampToValueAtTime(.0001, at + .4);
+      src.connect(bp); bp.connect(v); v.connect(out); src.start(at);
+    };
+    const play = fn => { if (muted || !entered) return; init().then(c => { if (c) fn(c.currentTime + .01); }); };
+    return {
+      tap:   () => play(t => bell(1174.66, t, .035, .45)),                     // D6
+      back:  () => play(t => bell(880, t, .03, .45)),                         // A5
+      swipe: () => play(t => { air(t, .02); bell(1479.98, t + .1, .016, .6); }), // airy + F#6
+      done:  () => play(t => [587.33, 739.99, 880, 1174.66].forEach((f, i) => bell(f, t + i * .09, .028, .8)))
+    };
+  })();
 
   // Project deck: centred card, side cards visible, swipe left/right, dots.
   const deck = new Swiper("#deck", {
@@ -79,6 +123,7 @@
   const shine = el => { el.classList.remove("is-shining"); void el.offsetWidth; el.classList.add("is-shining"); setTimeout(() => el.classList.remove("is-shining"), 950); };
   // A quiet shine on the card in front every few seconds.
   if (!reduce) setInterval(() => { const a = document.querySelector(".swiper-slide-active .card"); if (a && !document.hidden) shine(a); }, 7000);
+  deck.on("slideChange", () => Sfx.swipe());
   deck.on("slideChangeTransitionEnd", () => { const a = document.querySelector(".swiper-slide-active .card"); if (a) shine(a); });
   const sparkle = app => {
     const box = app.querySelector(".sparks"); box.innerHTML = "";
@@ -89,11 +134,15 @@
       gsap.fromTo(d, { x: 0, y: 0, opacity: 1, scale: 1 }, { x: Math.cos(a) * r, y: Math.sin(a) * r, opacity: 0, scale: .3, duration: .9, ease: "power2.out" });
     });
   };
-  const setStage = (stage, platform) => {
+  const setStage = (stage, platform, quiet) => {
     shine(card);
+    if (!quiet) (stage < card.dataset.stage ? Sfx.back : Sfx.tap)();
     if (platform) card.dataset.platform = platform;
     card.dataset.stage = stage;
     label.textContent = card.dataset.platform === "ios" ? "iPhone" : "Android";
+    status.textContent = card.dataset.platform === "ios"
+      ? "اضغط على التطبيق ليفتح، ثم أضِفه للشاشة الرئيسية من زر المشاركة في Safari"
+      : "اضغط على أيقونة التطبيق ليبدأ التنزيل";
     deck.update();
   };
   card.querySelector("[data-open]").addEventListener("click", e => { e.stopPropagation(); setStage("1"); });
@@ -107,25 +156,73 @@
     app.style.setProperty("--p", v);
     app.querySelector("[data-num]").textContent = v;
   };
-  const timers = new Map();
+  // Real downloads. Android: the newest release of this repository (published from Project-one main,
+  // rider + captain only). iPhone: the web apps in ./rider/ and ./captain/.
+  const REPO = "khubaibalramdan/Designs.github.io-";
+  let release = null;
+  const latest = () => release || (release = fetch(`https://api.github.com/repos/${REPO}/releases/latest`, { headers: { Accept: "application/vnd.github+json" } })
+    .then(r => r.ok ? r.json() : Promise.reject(new Error("no-release")))
+    .catch(e => { release = null; throw e; }));
+  const assetFor = (rel, who) => (rel.assets || []).find(x => new RegExp(`^abnaa-${who}-.*\\.apk$`, "i").test(x.name));
+
+  const jobs = new Map();
+  const finish = app => { show(app, 100); app.classList.replace("is-loading", "is-done"); sparkle(app); shine(card); Sfx.done(); };
+  const reset = app => { app.classList.remove("is-loading", "is-done"); app.style.removeProperty("--p"); };
+  const saveBlob = (blob, name) => {
+    const url = URL.createObjectURL(blob), a = document.createElement("a");
+    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  };
+
+  const download = async (app, who) => {
+    const ctrl = new AbortController(); jobs.set(app, ctrl);
+    show(app, 1); Sfx.tap();
+    status.textContent = "جارٍ التنزيل…";
+    let asset;
+    try { asset = assetFor(await latest(), who); } catch (e) { asset = null; }
+    if (!asset) { jobs.delete(app); reset(app); status.textContent = "ملف التطبيق غير متوفر حالياً، جرّب بعد قليل"; return; }
+    try {
+      // The API asset address answers with the file and allows the page to read it, so the counter is real.
+      const res = await fetch(asset.url, { headers: { Accept: "application/octet-stream" }, signal: ctrl.signal });
+      if (!res.ok || !res.body) throw new Error("http");
+      const total = +res.headers.get("content-length") || asset.size || 0;
+      const reader = res.body.getReader(); const parts = []; let got = 0;
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        parts.push(value); got += value.length;
+        if (total) show(app, Math.max(1, Math.min(99, Math.floor(got / total * 100))));
+      }
+      saveBlob(new Blob(parts, { type: "application/vnd.android.package-archive" }), asset.name);
+      jobs.delete(app); finish(app);
+      status.textContent = "اكتمل التنزيل. افتح الملف من الإشعارات لتثبيته";
+    } catch (e) {
+      jobs.delete(app);
+      if (ctrl.signal.aborted) return;
+      // Fallback: the phone's own downloader takes over (no counter possible here).
+      const a = document.createElement("a"); a.href = asset.browser_download_url; a.rel = "noopener"; document.body.appendChild(a); a.click(); a.remove();
+      finish(app); status.textContent = "بدأ التنزيل من المتصفح، تابعه من الإشعارات";
+    }
+  };
+
   card.querySelectorAll(".app").forEach(app => {
+    const who = app.dataset.app;
     app.querySelector("[data-get]").addEventListener("click", () => {
-      if (timers.has(app)) return;
-      // PREVIEW ONLY: simulated progress. Real downloads are wired in phase 3.
-      let v = 1;
-      timers.set(app, setInterval(() => {
-        show(app, v);
-        if (++v > 100) { clearInterval(timers.get(app)); timers.delete(app); app.classList.replace("is-loading", "is-done"); sparkle(app); shine(card); status.textContent = "اكتمل التنزيل"; }
-      }, 40));
-      status.textContent = "جارٍ التنزيل…";
+      if (jobs.has(app)) return;
+      if (card.dataset.platform === "ios") { Sfx.tap(); location.href = `./${who}/`; return; }
+      if (q.has("demo")) { // screenshots and videos only
+        let v = 1; const t = setInterval(() => { show(app, v); if (++v > 100) { clearInterval(t); jobs.delete(app); finish(app); status.textContent = "اكتمل التنزيل"; } }, 40);
+        jobs.set(app, { abort: () => clearInterval(t) }); Sfx.tap(); status.textContent = "جارٍ التنزيل…"; return;
+      }
+      download(app, who);
     });
     app.querySelector("[data-cancel]").addEventListener("click", () => {
-      clearInterval(timers.get(app)); timers.delete(app);
-      app.classList.remove("is-loading", "is-done"); app.style.removeProperty("--p");
+      const j = jobs.get(app); if (j) j.abort(); jobs.delete(app);
+      reset(app); Sfx.back();
       status.textContent = "أُلغي التنزيل";
     });
   });
 
-  if (q.get("s")) setStage(q.get("s"), q.get("pf") || "android");
+  if (q.get("s")) setStage(q.get("s"), q.get("pf") || "android", true);
   if (q.get("p")) show(card.querySelector('[data-app="captain"]'), q.get("p"));
 })();
