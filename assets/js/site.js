@@ -111,7 +111,7 @@
 
   // Project deck: centred card, side cards visible, swipe left/right, dots.
   const deck = new Swiper("#deck", {
-    effect: "coverflow", centeredSlides: true, slidesPerView: "auto", initialSlide: 1, spaceBetween: 0,
+    effect: "coverflow", centeredSlides: true, slidesPerView: "auto", initialSlide: 0, spaceBetween: 0,
     grabCursor: true, noSwipingSelector: "button", speed: 380, threshold: 6, resistanceRatio: .6,
     coverflowEffect: { rotate: 0, stretch: 0, depth: 90, modifier: 1, slideShadows: false },
     pagination: { el: ".swiper-pagination", clickable: true }
@@ -231,7 +231,8 @@
   const sheet = document.getElementById("qr-sheet");
   const QR_TEXT = {
     home:  ["الصفحة الرئيسية", "صوّر الرمز لفتح الصفحة"],
-    abnaa: ["أبناء الشمال", "صوّر الرمز لفتح تنزيل تطبيقات أبناء الشمال مباشرة"]
+    abnaa: ["أبناء الشمال", "صوّر الرمز لفتح تنزيل تطبيقات أبناء الشمال مباشرة"],
+    cashier: ["الكاشير الذكي", "صوّر الرمز لفتح كرت الكاشير الذكي مباشرة"]
   };
   let lastFocus = null;
   const openQR = key => {
@@ -254,6 +255,11 @@
     const pf = /iPhone|iPad|iPod/i.test(ua) ? "ios" : /Android/i.test(ua) ? "android" : null;
     deck.slideTo([...deck.slides].findIndex(sl => sl.contains(card)), 0);
     if (pf) setStage("2", pf, true); else setStage("1", null, true);
+  }
+  // ?p=cashier -> centre the Smart Cashier card.
+  if (q.get("p") === "cashier") {
+    const cc = document.querySelector(".card.cashier");
+    if (cc) deck.slideTo([...deck.slides].findIndex(sl => sl.contains(cc)), 0);
   }
 
 

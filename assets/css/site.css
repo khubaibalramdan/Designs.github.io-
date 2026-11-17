@@ -216,3 +216,5 @@ svg{display:block}
 #sound[aria-pressed="false"] .on svg{animation:sound-pulse 1.6s ease-in-out infinite}
 @keyframes sound-pulse{50%{transform:scale(1.12);filter:drop-shadow(0 0 6px var(--gold))}}
 @media (prefers-reduced-motion:reduce){#sound .on svg{animation:none}}
+.cashier .desc{margin:0}
+.cashier .desc.latin{font:500 15px Montserrat,sans-serif;letter-spacing:.06em;color:var(--gold-hi)}
