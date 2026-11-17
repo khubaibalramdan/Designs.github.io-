@@ -75,6 +75,8 @@
     }
 
     try {
+      soundState = SOUND.AMBIENT;
+      updateSoundButton();
       ambientAudio.muted = false;
       ambientAudio.volume = AMBIENT_VOLUME;
       await ambientAudio.play();
@@ -83,9 +85,6 @@
         ambientAudio.pause();
         return;
       }
-
-      soundState = SOUND.AMBIENT;
-      updateSoundButton();
     } catch {
       if (requestId === playRequest && soundState !== SOUND.MUTED) {
         soundState = SOUND.BLOCKED;
@@ -100,13 +99,14 @@
     const requestId = ++playRequest;
     pauseAllAudio();
 
-    const splashVisible = splash && !splash.classList.contains("is-hidden");
-    if (!splashVisible || !splashAudio || splashToneFinished) {
+    if (!splashAudio || splashToneFinished) {
       await playAmbient(requestId);
       return;
     }
 
     try {
+      soundState = SOUND.SPLASH;
+      updateSoundButton();
       splashAudio.muted = false;
       await splashAudio.play();
 
@@ -114,9 +114,6 @@
         splashAudio.pause();
         return;
       }
-
-      soundState = SOUND.SPLASH;
-      updateSoundButton();
     } catch {
       if (requestId === playRequest && soundState !== SOUND.MUTED) {
         soundState = SOUND.BLOCKED;
@@ -186,6 +183,10 @@
   window.addEventListener("pagehide", () => {
     ++playRequest;
     pauseAllAudio();
+    if (soundState !== SOUND.MUTED) {
+      soundState = SOUND.BLOCKED;
+      updateSoundButton();
+    }
   });
 
   window.setTimeout(() => {
