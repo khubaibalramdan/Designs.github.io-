@@ -235,6 +235,44 @@
     if (pf) setStage("2", pf, true); else setStage("1", null, true);
   }
 
+
+  // Install the page as an app (PWA). Android Chrome: one tap. iPhone Safari and in-app browsers: short steps.
+  const installBtn = document.getElementById("install");
+  const instSheet = document.getElementById("install-sheet");
+  const ua = navigator.userAgent;
+  const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+  const isIOS = /iPhone|iPad|iPod/i.test(ua);
+  const inApp = /FBAN|FBAV|Instagram|WhatsApp|Line\/|; wv\)/i.test(ua);
+  let deferred = null;
+  const showSteps = steps => {
+    instSheet.querySelector("[data-install-steps]").innerHTML = steps.map(t => `<li>${t}</li>`).join("");
+    instSheet.hidden = false; Sfx.tap();
+  };
+  if (!standalone) {
+    if (isIOS || inApp) installBtn.hidden = false;
+    window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); deferred = e; installBtn.hidden = false; });
+  }
+  window.addEventListener("appinstalled", () => { installBtn.hidden = true; deferred = null; });
+  installBtn.addEventListener("click", async () => {
+    if (deferred) { Sfx.tap(); deferred.prompt(); const r = await deferred.userChoice; deferred = null; if (r.outcome === "accepted") installBtn.hidden = true; return; }
+    if (inApp) return showSteps(["افتح القائمة <b>⋮</b> أو <b>…</b> فوق", isIOS ? "اختر <b>الفتح في Safari</b>" : "اختر <b>الفتح في Chrome</b>", "اضغط زر <b>تثبيت</b> من جديد"]);
+    if (isIOS) return showSteps(["اضغط زر <b>المشاركة</b> ⬆ تحت الشاشة", "اختر <b>إضافة إلى الشاشة الرئيسية</b>", "اضغط <b>إضافة</b>"]);
+    showSteps(["افتح قائمة المتصفح <b>⋮</b>", "اختر <b>تثبيت التطبيق</b> أو <b>إضافة إلى الشاشة الرئيسية</b>"]);
+  });
+  const closeInst = () => { if (!instSheet.hidden) { instSheet.hidden = true; Sfx.back(); } };
+  instSheet.querySelector("[data-install-close]").addEventListener("click", closeInst);
+  instSheet.addEventListener("click", e => { if (e.target === instSheet) closeInst(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeInst(); });
+
+  if ("serviceWorker" in navigator && window.isSecureContext && location.protocol !== "file:") navigator.serviceWorker.register("sw.js").catch(() => {});
+
+  // Installed on Android the phone allows sound without a tap: the splash then plays by itself.
+  if (standalone && !q.has("ns")) {
+    const allowed = navigator.getAutoplayPolicy ? Promise.resolve(navigator.getAutoplayPolicy("mediaelement") === "allowed")
+      : (tone.volume = 0, tone.play().then(() => { tone.pause(); tone.currentTime = 0; return true; }, () => false));
+    allowed.then(ok => { tone.volume = 1; if (ok) setTimeout(doEnter, 700); });
+  }
+
   if (q.get("s")) setStage(q.get("s"), q.get("pf") || "android", true);
   if (q.get("pct")) show(card.querySelector('[data-app="captain"]'), q.get("pct"));
 })();

@@ -191,3 +191,15 @@ svg{display:block}
 .app.is-started .count::before{content:"";width:46px;height:46px;border-radius:50%;border:3px solid rgba(255,217,138,.25);border-top-color:var(--gold-hi);animation:spin .9s linear infinite;filter:drop-shadow(0 0 6px var(--gold))}
 .app.is-started .app-icon{animation:done-glow 1.2s ease-out}
 @keyframes spin{to{transform:rotate(1turn)}}
+
+/* ---- Install as an app ---- */
+.brand-side{display:flex;align-items:center;gap:8px}
+.install-btn{display:flex;align-items:center;gap:6px;height:44px;padding:0 14px;border:0;border-radius:14px;cursor:pointer;
+  font:700 14px Kufi,Montserrat,sans-serif;color:#2a1704;background:linear-gradient(180deg,var(--gold-hi),var(--gold) 55%,var(--gold-deep));box-shadow:0 6px 18px rgba(242,160,40,.35),inset 0 1px 0 rgba(255,255,255,.6)}
+.install-btn[hidden]{display:none}
+.install-btn svg{width:18px;height:18px}
+.inst-icon{display:grid;place-items:center;margin:4px 0 14px}
+.inst-icon img{border-radius:22px;box-shadow:0 0 0 1.5px var(--gold),0 0 18px rgba(242,184,75,.45)}
+.inst-steps{margin:0;padding:0 22px 0 0;text-align:right;display:grid;gap:10px;font-size:14.5px;line-height:1.7}
+.inst-steps li::marker{color:var(--gold);font-weight:700}
+.inst-steps b{color:var(--gold-hi)}
