@@ -6,9 +6,37 @@
   <meta name="theme-color" content="#090909">
   <meta name="description" content="KT | ABO TALA | KH — حلول رقمية وتصميم وتطوير">
   <title>KT | ABO TALA | KH</title>
-  <link rel="preload" href="./assets/css/main.css?v=6" as="style">
+
+  <style id="download-panel-critical">
+    #project-download[hidden]{display:none!important}
+    #project-download{position:fixed!important;inset:0!important;z-index:1000!important;display:grid;place-items:center;padding:16px;overflow-y:auto}
+    #project-download .download-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.86);backdrop-filter:blur(12px)}
+    #project-download .download-panel{position:relative;width:min(100%,590px);max-height:92svh;overflow-y:auto;padding:24px 18px 18px;border:1px solid #c7a45a;border-radius:27px;background:radial-gradient(ellipse at 50% 0,rgba(194,151,69,.17),transparent 48%),linear-gradient(145deg,#171510,#080808 72%);box-shadow:0 18px 65px #000,0 0 34px rgba(199,164,90,.18)}
+    #project-download .download-close{position:absolute;top:13px;left:13px;width:38px;height:38px;border:1px solid #e2c47e;border-radius:50%;background:#080808;color:#e2c47e;font-size:26px}
+    #project-download .download-heading{display:flex;align-items:center;justify-content:center;gap:12px;margin:7px 32px 0}
+    #project-download .download-mountain{color:#e2c47e;font-size:42px}
+    #project-download .download-heading h2{margin:0;color:#e2c47e;font-size:clamp(23px,6vw,34px)}
+    #project-download .download-heading .eyebrow{margin:0 0 4px;color:#c7a45a;font-size:8px}
+    #project-download .download-subtitle{margin:9px 0 18px;color:#eee;font-size:15px;text-align:center}
+    #project-download .platform-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+    #project-download .platform-card{display:flex;min-width:0;flex-direction:column;gap:10px;padding:13px 10px;border:1px solid #c7a45a;border-radius:22px;background:linear-gradient(145deg,#101408,#080808);box-shadow:inset 0 0 24px rgba(130,190,20,.1)}
+    #project-download .iphone-platform{border-color:#6cbede;background:linear-gradient(145deg,#08151e,#080808);box-shadow:inset 0 0 24px rgba(48,148,201,.1)}
+    #project-download .platform-brand{display:flex;min-height:108px;flex-direction:column;align-items:center;justify-content:center;gap:5px}
+    #project-download .platform-brand h3{margin:0;color:white;font-size:21px;direction:ltr}
+    #project-download .android-symbol{color:#8bd400;font-size:48px;line-height:1}
+    #project-download .apple-symbol{color:#fff;font-size:48px;line-height:1}
+    #project-download .app-download{display:grid;grid-template-columns:30px minmax(0,1fr) 28px;min-height:58px;align-items:center;gap:5px;padding:7px;border:1px solid #d8b66f;border-radius:15px;background:#080808;color:#f4eee4;font-size:clamp(10px,3vw,14px)}
+    #project-download .app-role-icon,#project-download .download-arrow{color:#e2c47e;font-size:23px;text-align:center}
+    #project-download .download-status{margin-top:15px;padding:12px;border:1px solid rgba(210,174,103,.4);border-radius:13px;color:#d7c69b;background:#080808;font-size:11px;line-height:1.8;text-align:center}
+    #project-download .progress-copy{display:flex;justify-content:space-between;margin:10px 0;color:#eee;font-size:12px}
+    #project-download .progress-track{height:10px;overflow:hidden;border:1px solid #aaa;border-radius:20px;background:#181818}
+    #project-download .progress-track span{display:block;width:1%;height:100%;background:linear-gradient(90deg,#a5ed1a,#68d900)}
+    body.download-open{overflow:hidden}
+    @media(max-width:360px){#project-download{padding:10px}#project-download .download-panel{padding:20px 10px 13px}#project-download .platform-grid{gap:7px}#project-download .platform-card{padding:9px 6px;gap:8px}#project-download .app-download{grid-template-columns:24px minmax(0,1fr) 24px;padding:6px 4px;font-size:10px}}
+  </style>
+  <link rel="preload" href="./assets/css/main.css?v=7" as="style">
   <link rel="stylesheet" href="./assets/css/main.css?v=5">
-  <script src="./assets/js/main.js?v=11" defer></script>
+  <script src="./assets/js/main.js?v=12" defer></script>
 </head>
 <body>
   <div class="splash" id="splash" aria-label="KT">
