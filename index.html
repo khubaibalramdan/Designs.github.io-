@@ -93,6 +93,33 @@
       </div>
       <div class="menu-footer">KT <span>—</span> DIGITAL & CREATIVE</div>
     </aside>
+
+
+    <section class="download-overlay" id="project-download" hidden aria-hidden="true" aria-labelledby="download-title">
+      <div class="download-backdrop" data-download-close></div>
+      <div class="download-panel" role="dialog" aria-modal="true" aria-labelledby="download-title">
+        <button class="download-close" id="download-close" type="button" aria-label="إغلاق">×</button>
+        <div class="download-heading">
+          <span class="download-mountain" aria-hidden="true">⌁</span>
+          <div><p class="eyebrow">ABNAA AL SHAMAL</p><h2 id="download-title">أبناء الشمال</h2></div>
+        </div>
+        <p class="download-subtitle">تنزيل تطبيقات المشروع</p>
+        <div class="platform-grid">
+          <section class="platform-card android-platform" aria-labelledby="android-title">
+            <div class="platform-brand"><span class="android-symbol" aria-hidden="true">●</span><h3 id="android-title">Android</h3></div>
+            <button class="app-download" type="button" data-app="android-rider" disabled><span class="app-role-icon" aria-hidden="true">♙</span><span>تطبيق العميل</span><span class="download-arrow" aria-hidden="true">↓</span></button>
+            <button class="app-download" type="button" data-app="android-captain" disabled><span class="app-role-icon" aria-hidden="true">♟</span><span>تطبيق الكابتن</span><span class="download-arrow" aria-hidden="true">↓</span></button>
+          </section>
+          <section class="platform-card iphone-platform" aria-labelledby="iphone-title">
+            <div class="platform-brand"><span class="apple-symbol" aria-hidden="true">●</span><h3 id="iphone-title">iPhone</h3></div>
+            <button class="app-download" type="button" data-app="iphone-rider" disabled><span class="app-role-icon" aria-hidden="true">♙</span><span>تطبيق العميل</span><span class="download-arrow" aria-hidden="true">↓</span></button>
+            <button class="app-download" type="button" data-app="iphone-captain" disabled><span class="app-role-icon" aria-hidden="true">♟</span><span>تطبيق الكابتن</span><span class="download-arrow" aria-hidden="true">↓</span></button>
+          </section>
+        </div>
+        <div class="download-status" id="download-status" role="status" aria-live="polite">روابط ملفات التطبيقات قيد التهيئة. لن يبدأ التنزيل قبل ربط الملفات الفعلية.</div>
+        <div class="download-progress" id="download-progress" hidden><div class="progress-copy"><span id="progress-label">جارٍ التنزيل</span><strong id="progress-value">1%</strong></div><div class="progress-track"><span id="progress-fill"></span></div></div>
+      </div>
+    </section>
   </main>
 
   <audio id="splash-audio" preload="auto" playsinline>
