@@ -142,3 +142,42 @@ body.menu-open { overflow: hidden; }
 .progress-track span { display: block; width: 1%; height: 100%; border-radius: inherit; background: linear-gradient(90deg,#a5ed1a,#68d900); box-shadow: 0 0 12px rgba(132,223,0,.7); transition: width .15s linear; }
 body.download-open { overflow: hidden; }
 @media (max-width: 360px) { .download-panel { padding: 20px 11px 13px; border-radius: 22px; } .platform-grid { gap: 7px; } .platform-card { padding: 10px 7px; gap: 8px; } .app-download { grid-template-columns: 26px minmax(0,1fr) 27px; padding: 6px 5px; font-size: 10px; } .download-arrow { width: 26px; height: 26px; } }
+
+
+/* In-place project-card morph: details face <-> downloads face */
+.project-card{position:relative;min-height:410px;perspective:1100px;transform-style:preserve-3d;transition:min-height .58s cubic-bezier(.2,.8,.2,1),border-color .45s ease,box-shadow .45s ease;isolation:isolate}
+.project-card::before{content:"";position:absolute;z-index:5;inset:-1px;pointer-events:none;border-radius:inherit;opacity:0;background:linear-gradient(112deg,transparent 20%,rgba(255,255,255,.08) 38%,rgba(255,222,151,.92) 50%,rgba(255,255,255,.18) 55%,transparent 72%);transform:translateX(-130%);}
+.project-card.is-transitioning::before{opacity:1;animation:project-card-shine .72s ease-in-out forwards}
+.project-card.is-transitioning{border-color:#f0cd7c;box-shadow:0 0 12px rgba(255,199,87,.7),0 0 42px rgba(255,181,55,.32),inset 0 0 22px rgba(255,208,125,.12)}
+@keyframes project-card-shine{0%{transform:translateX(-130%)}100%{transform:translateX(130%)}}
+.project-face{position:absolute;inset:0;display:flex;flex-direction:column;min-height:100%;backface-visibility:hidden;-webkit-backface-visibility:hidden;transition:opacity .35s ease,transform .62s cubic-bezier(.2,.78,.18,1);}
+.project-details-face{opacity:1;transform:rotateY(0deg);}
+.project-download-face{opacity:0;visibility:hidden;pointer-events:none;transform:rotateY(-88deg);padding:15px 13px 13px;background:radial-gradient(ellipse at 50% 0,rgba(206,164,80,.18),transparent 55%),linear-gradient(145deg,#17150f,#090909 75%);}
+.project-card.is-download-view{min-height:430px;border-color:rgba(230,190,105,.9);box-shadow:0 0 22px rgba(208,164,74,.18),inset 0 0 25px rgba(210,171,96,.07)}
+.project-card.is-download-view .project-details-face{opacity:0;visibility:hidden;pointer-events:none;transform:rotateY(88deg)}
+.project-card.is-download-view .project-download-face{opacity:1;visibility:visible;pointer-events:auto;transform:rotateY(0deg);transition-delay:.12s}
+.card-open-hint{display:flex;justify-content:space-between;align-items:center;margin:auto 15px 13px;padding-top:10px;border-top:1px solid rgba(222,187,118,.16);color:#bba77d;font-size:10px}
+.card-open-hint span{color:var(--gold-light);font-size:17px}
+.card-download-top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 0 13px;border-bottom:1px solid rgba(220,184,112,.22)}
+.card-download-top>div{flex:1;text-align:center}
+.card-download-top .project-kicker{font-size:7px}
+.card-download-top h3{margin:4px 0 0;color:var(--gold-light);font-size:clamp(14px,4vw,18px);font-weight:500}
+.card-back{display:grid;flex:0 0 34px;width:34px;height:34px;place-items:center;border:1px solid rgba(221,185,111,.62);border-radius:50%;background:rgba(0,0,0,.4);color:var(--gold-light);font-size:25px;cursor:pointer}
+.card-download-mark{display:grid;flex:0 0 34px;width:34px;height:34px;place-items:center;border:1px solid rgba(220,184,112,.35);border-radius:50%;color:var(--gold-light);font-size:22px}
+.card-platform-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;padding-top:13px}
+.card-platform{display:flex;min-width:0;flex-direction:column;gap:8px;padding:9px 7px;border:1px solid rgba(133,196,31,.78);border-radius:16px;background:linear-gradient(145deg,rgba(10,19,6,.95),rgba(8,8,8,.98));box-shadow:inset 0 0 18px rgba(131,194,27,.08),0 0 12px rgba(131,194,27,.08)}
+.card-platform.iphone-platform{border-color:rgba(85,180,225,.85);background:linear-gradient(145deg,rgba(5,17,25,.97),rgba(8,8,8,.98));box-shadow:inset 0 0 18px rgba(55,159,210,.08),0 0 12px rgba(55,159,210,.08)}
+.card-platform-brand{display:flex;min-height:76px;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#fff}
+.card-platform-brand strong{font-size:clamp(13px,3.8vw,17px);direction:ltr}
+.card-platform-brand .android-symbol,.card-platform-brand .apple-symbol{font-size:36px}
+.project-download-face .app-download{display:grid;grid-template-columns:22px minmax(0,1fr) 22px;min-height:48px;align-items:center;gap:3px;padding:5px 4px;border:1px solid rgba(221,185,111,.78);border-radius:12px;background:rgba(0,0,0,.62);color:#f3eee5;font-size:clamp(9px,2.8vw,12px);cursor:pointer}
+.project-download-face .app-download:active{transform:scale(.97);background:rgba(203,162,83,.13)}
+.project-download-face .app-role-icon,.project-download-face .download-arrow{color:var(--gold-light);font-size:19px;text-align:center}
+.project-download-face .download-status{margin-top:auto;padding:9px 5px 0;color:#bba77d;font-size:9px;line-height:1.6;text-align:center}
+.project-download-face .download-progress{margin-top:8px}
+.project-download-face .progress-copy{display:flex;justify-content:space-between;margin:5px 0;color:#eee;font-size:10px}
+.project-download-face .progress-copy strong{color:var(--gold-light);direction:ltr}
+.project-download-face .progress-track{height:7px;overflow:hidden;border:1px solid rgba(230,230,230,.5);border-radius:20px;background:#181818}
+.project-download-face .progress-track span{display:block;width:1%;height:100%;border-radius:inherit;background:linear-gradient(90deg,#a5ed1a,#68d900);box-shadow:0 0 10px rgba(132,223,0,.7);transition:width .15s linear}
+@media(max-width:360px){.project-card{min-height:390px}.project-card.is-download-view{min-height:420px}.project-download-face{padding:12px 9px 10px}.card-platform-grid{gap:6px}.card-platform{padding:8px 5px;gap:7px}.project-download-face .app-download{grid-template-columns:19px minmax(0,1fr) 19px;font-size:9px}}
+@media(prefers-reduced-motion:reduce){.project-face,.project-card,.project-card::before{transition:none!important;animation:none!important}}
