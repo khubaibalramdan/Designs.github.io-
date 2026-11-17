@@ -145,10 +145,14 @@
       : "اضغط على أيقونة التطبيق ليبدأ التنزيل";
     deck.update();
   };
-  card.querySelector("[data-open]").addEventListener("click", e => { e.stopPropagation(); setStage("1"); });
-  card.addEventListener("click", e => { if (card.dataset.stage === "0" && !e.target.closest("button")) setStage("1"); });
+  // The phone decides: Android goes straight to the Android apps (APK), iPhone to the iPhone apps.
+  // Only an unknown device (a computer) gets the Android / iPhone choice.
+  const myPhone = /iPhone|iPad|iPod/i.test(navigator.userAgent) ? "ios" : /Android/i.test(navigator.userAgent) ? "android" : null;
+  const openCard = () => myPhone ? setStage("2", myPhone) : setStage("1");
+  card.querySelector("[data-open]").addEventListener("click", e => { e.stopPropagation(); openCard(); });
+  card.addEventListener("click", e => { if (card.dataset.stage === "0" && !e.target.closest("button")) openCard(); });
   card.querySelectorAll("[data-pick]").forEach(b => b.addEventListener("click", () => setStage("2", b.dataset.pick)));
-  card.querySelectorAll("[data-back]").forEach(b => b.addEventListener("click", () => setStage(card.dataset.stage === "2" ? "1" : "0")));
+  card.querySelectorAll("[data-back]").forEach(b => b.addEventListener("click", () => setStage(card.dataset.stage === "2" && !myPhone ? "1" : "0")));
 
   // Progress 1..100 drawn on the app icon itself.
   const show = (app, v) => {
