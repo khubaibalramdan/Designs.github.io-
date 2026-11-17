@@ -190,7 +190,6 @@ body.menu-open { overflow: hidden; }
 /* Empty navigable sections: structure only, content will be added later. */
 .content-section {
   width: min(100%, 580px);
-  min-height: 220px;
   margin: 0 auto;
   padding: 28px 5px 32px;
   scroll-margin-top: 24px;
@@ -203,9 +202,7 @@ body.menu-open { overflow: hidden; }
   font-size: 20px;
   font-weight: 500;
 }
-.section-content {
-  min-height: 150px;
-}
+.section-content { min-height: 0; }
 
 
 /* Brand mark: K♡T in the existing splash and header positions only. */
