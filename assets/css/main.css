@@ -206,3 +206,9 @@ body.menu-open { overflow: hidden; }
 .section-content {
   min-height: 150px;
 }
+
+
+/* Brand mark: K♡T in the existing splash and header positions only. */
+.splash-mark-image { display: none; }
+.splash-mark-text { display: block; color: var(--gold-light); font: 500 clamp(48px, 14vw, 72px)/1 Georgia, serif; letter-spacing: -.075em; direction: ltr; text-shadow: 0 0 24px rgba(199,164,90,.22); }
+.brand-mark-text { display: block; color: var(--gold-light); font: 600 19px/1 Georgia, serif; letter-spacing: -.09em; direction: ltr; white-space: nowrap; }
