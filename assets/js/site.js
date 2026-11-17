@@ -61,6 +61,7 @@
     tone.muted = ambient.muted = muted;
     soundBtn.setAttribute("aria-pressed", String(muted));
     soundBtn.setAttribute("aria-label", muted ? "تشغيل الصوت" : "كتم الصوت");
+    soundBtn.querySelector("[data-sound-label]").textContent = muted ? "مكتوم" : "الصوت";
     if (!muted && entered && !splash.isConnected) startAmbient();
   });
 

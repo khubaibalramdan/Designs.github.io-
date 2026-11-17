@@ -209,3 +209,10 @@ svg{display:block}
 .swiper-slide{will-change:transform;transition:opacity .3s}
 .swiper-slide:not(.swiper-slide-active) .card{filter:none}
 .swiper-slide:not(.swiper-slide-active){opacity:.62}
+
+/* ---- Sound button: clearly visible in the corner ---- */
+#sound{width:auto;padding:0 12px;gap:6px;display:flex;align-items:center;border-color:rgba(242,184,75,.6);box-shadow:0 0 0 1px rgba(242,184,75,.25),0 0 14px rgba(242,184,75,.35)}
+#sound .lbl{font:600 12px Kufi,Montserrat,sans-serif;color:var(--gold-hi)}
+#sound[aria-pressed="false"] .on svg{animation:sound-pulse 1.6s ease-in-out infinite}
+@keyframes sound-pulse{50%{transform:scale(1.12);filter:drop-shadow(0 0 6px var(--gold))}}
+@media (prefers-reduced-motion:reduce){#sound .on svg{animation:none}}
