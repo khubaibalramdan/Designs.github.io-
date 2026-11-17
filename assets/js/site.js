@@ -223,6 +223,36 @@
     });
   });
 
+
+  // QR: one for the page, one per project. Scanning a project code opens the page straight on its downloads.
+  const sheet = document.getElementById("qr-sheet");
+  const QR_TEXT = {
+    home:  ["الصفحة الرئيسية", "صوّر الرمز لفتح الصفحة"],
+    abnaa: ["أبناء الشمال", "صوّر الرمز لفتح تنزيل تطبيقات أبناء الشمال مباشرة"]
+  };
+  let lastFocus = null;
+  const openQR = key => {
+    lastFocus = document.activeElement;
+    sheet.querySelectorAll("[data-qr-code]").forEach(el => { el.hidden = el.dataset.qrCode !== key; });
+    sheet.querySelector("[data-qr-title]").textContent = QR_TEXT[key][0];
+    sheet.querySelector("[data-qr-note]").textContent = QR_TEXT[key][1];
+    sheet.hidden = false; Sfx.tap();
+    sheet.querySelector("[data-qr-close]").focus();
+  };
+  const closeQR = () => { if (sheet.hidden) return; sheet.hidden = true; Sfx.back(); if (lastFocus) lastFocus.focus(); };
+  document.querySelectorAll("[data-qr]").forEach(b => b.addEventListener("click", e => { e.stopPropagation(); openQR(b.dataset.qr); }));
+  sheet.querySelector("[data-qr-close]").addEventListener("click", closeQR);
+  sheet.addEventListener("click", e => { if (e.target === sheet) closeQR(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeQR(); });
+
+  // Deep link from a project QR: ?p=abnaa -> centre that card and open its downloads for this phone.
+  if (q.get("p") === "abnaa") {
+    const ua = navigator.userAgent;
+    const pf = /iPhone|iPad|iPod/i.test(ua) ? "ios" : /Android/i.test(ua) ? "android" : null;
+    deck.slideTo([...deck.slides].findIndex(sl => sl.contains(card)), 0);
+    if (pf) setStage("2", pf, true); else setStage("1", null, true);
+  }
+
   if (q.get("s")) setStage(q.get("s"), q.get("pf") || "android", true);
-  if (q.get("p")) show(card.querySelector('[data-app="captain"]'), q.get("p"));
+  if (q.get("pct")) show(card.querySelector('[data-app="captain"]'), q.get("pct"));
 })();

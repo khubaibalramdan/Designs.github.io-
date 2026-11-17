@@ -166,3 +166,23 @@ svg{display:block}
 .sparks i{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px;border-radius:50%;background:#ffe2a0;box-shadow:0 0 8px #ffc65a;opacity:0}
 .swiper-wrapper{pointer-events:none}.swiper-slide{pointer-events:auto}
 .app:not(.is-loading):not(.is-done) .ring{display:none}
+
+/* ---- QR ---- */
+.ctrls{display:flex;gap:8px}
+.qr-mini{position:absolute;top:16px;left:16px;z-index:4;display:grid;place-items:center;width:40px;height:40px;border-radius:12px;cursor:pointer;color:var(--gold-hi);background:rgba(12,8,6,.5);border:1px solid rgba(242,184,75,.45)}
+.qr-mini svg{width:22px;height:22px}
+.qr-sheet{position:fixed;inset:0;z-index:40;display:grid;place-items:center;padding:24px;background:rgba(8,5,3,.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);animation:fade-in .25s ease}
+.qr-sheet[hidden]{display:none}
+@keyframes fade-in{from{opacity:0}}
+.qr-panel{position:relative;width:min(88vw,340px);padding:26px 22px 22px;border-radius:30px;text-align:center;
+  background:linear-gradient(180deg,rgba(40,27,16,.92),rgba(14,9,6,.96));
+  box-shadow:0 0 0 1.5px rgba(255,201,105,.85),0 0 22px rgba(255,180,60,.5),0 30px 60px rgba(0,0,0,.6);animation:stage-in .35s cubic-bezier(.2,.8,.2,1)}
+.qr-close{position:absolute;top:14px;left:14px;z-index:2}
+.qr-panel h2{margin:4px 48px 16px;font:700 22px Kufi,Montserrat,sans-serif}
+.qr-frame{position:relative;width:min(70vw,250px);margin:0 auto;padding:10px;border-radius:22px;background:#fff4dc;box-shadow:0 0 0 2px var(--gold),0 0 24px rgba(242,184,75,.45)}
+.qr-frame .qr-svg{display:block;width:100%;height:auto}
+.qr-heart{position:absolute;left:50%;top:50%;display:grid;place-items:center;width:23%;height:23%;transform:translate(-50%,-50%);border-radius:24%;background:#1a1206;color:var(--gold);box-shadow:0 0 0 4px #fff4dc}
+.qr-heart svg{width:68%;height:68%}
+.qr-note{margin:16px 0 4px;color:var(--text);font-size:14px}
+.qr-brand{justify-content:center;gap:4px;margin-top:10px;font-size:15px;color:var(--text)}
+.qr-brand small{font:500 11px Montserrat;letter-spacing:.24em;color:var(--mute);margin:0 4px}
