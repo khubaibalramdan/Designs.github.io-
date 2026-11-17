@@ -209,3 +209,47 @@ body.menu-open { overflow: hidden; }
 .splash-mark-image { display: none; }
 .splash-mark-text { display: block; color: var(--gold-light); font: 500 clamp(48px, 14vw, 72px)/1 Georgia, serif; letter-spacing: -.075em; direction: ltr; text-shadow: 0 0 24px rgba(199,164,90,.22); }
 .brand-mark-text { display: block; color: var(--gold-light); font: 600 19px/1 Georgia, serif; letter-spacing: -.09em; direction: ltr; white-space: nowrap; }
+
+/* Responsive project card sizing: derive height from the taller face. */
+#abnaa-project-card,
+#abnaa-project-card.is-download-view {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-rows: auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: hidden !important;
+  transition: border-color .45s ease, box-shadow .45s ease !important;
+}
+#abnaa-project-card > .project-face {
+  position: relative !important;
+  inset: auto !important;
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+  align-self: stretch !important;
+}
+#abnaa-project-card > .project-details-face {
+  z-index: 1;
+}
+#abnaa-project-card > .project-download-face {
+  z-index: 2;
+  padding: 13px 11px 10px !important;
+}
+#abnaa-project-card.is-download-view > .project-details-face {
+  z-index: 0;
+}
+#abnaa-project-card.is-download-view > .project-download-face {
+  z-index: 3;
+}
+@media (max-width: 380px) {
+  #abnaa-project-card > .project-download-face {
+    padding: 10px 8px 8px !important;
+  }
+}
+
