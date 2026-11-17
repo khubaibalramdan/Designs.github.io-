@@ -200,4 +200,106 @@
   startSound();
   document.addEventListener("pointerdown", retryBlockedPlayback, true);
   document.addEventListener("keydown", retryBlockedPlayback, true);
+
+
+  // Abnaa Al Shamal in-site download panel.
+  const projectCard = document.querySelector(".project-card");
+  const downloadPanel = document.getElementById("project-download");
+  const downloadClose = document.getElementById("download-close");
+  const downloadStatus = document.getElementById("download-status");
+  const downloadProgress = document.getElementById("download-progress");
+  const progressLabel = document.getElementById("progress-label");
+  const progressValue = document.getElementById("progress-value");
+  const progressFill = document.getElementById("progress-fill");
+
+  function closeDownloadPanel() {
+    if (!downloadPanel) return;
+    downloadPanel.hidden = true;
+    downloadPanel.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("download-open");
+  }
+
+  function openDownloadPanel() {
+    if (!downloadPanel) return;
+    downloadPanel.hidden = false;
+    downloadPanel.setAttribute("aria-hidden", "false");
+    document.body.classList.add("download-open");
+    downloadClose.focus();
+  }
+
+  if (projectCard) {
+    projectCard.tabIndex = 0;
+    projectCard.setAttribute("role", "button");
+    projectCard.setAttribute("aria-haspopup", "dialog");
+    projectCard.setAttribute("aria-label", "فتح تنزيل تطبيقات أبناء الشمال");
+    projectCard.addEventListener("click", openDownloadPanel);
+    projectCard.addEventListener("keydown", (event) => {
+      if (event.target !== projectCard) return;
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openDownloadPanel();
+      }
+    });
+  }
+
+  if (downloadClose) downloadClose.addEventListener("click", closeDownloadPanel);
+  if (downloadPanel) {
+    downloadPanel.querySelectorAll("[data-download-close]").forEach((el) => el.addEventListener("click", closeDownloadPanel));
+    downloadPanel.addEventListener("click", (event) => {
+      const button = event.target.closest(".app-download");
+      if (!button) return;
+      const appName = button.dataset.app;
+      const downloadUrl = button.dataset.url;
+      if (!downloadUrl) {
+        if (downloadStatus) downloadStatus.textContent = "ملف هذا التطبيق لم يُربط بعد. لن يبدأ تنزيل غير متاح.";
+        return;
+      }
+      startRealDownload(downloadUrl, appName);
+    });
+  }
+
+  async function startRealDownload(url, appName) {
+    if (!downloadProgress || !progressFill || !progressValue || !progressLabel) return;
+    downloadProgress.hidden = false;
+    downloadStatus.textContent = "جارٍ الاتصال بملف التطبيق…";
+    progressLabel.textContent = "جارٍ التنزيل";
+    progressValue.textContent = "1%";
+    progressFill.style.width = "1%";
+    try {
+      const response = await fetch(url);
+      if (!response.ok || !response.body) throw new Error("download-unavailable");
+      const total = Number(response.headers.get("content-length")) || 0;
+      const reader = response.body.getReader();
+      const chunks = [];
+      let received = 0;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        received += value.length;
+        const percent = total > 0 ? Math.min(99, Math.max(1, Math.floor(received / total * 100))) : 1;
+        progressValue.textContent = percent + "%";
+        progressFill.style.width = percent + "%";
+      }
+      const blob = new Blob(chunks);
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = appName + (url.toLowerCase().includes(".apk") ? ".apk" : ".bin");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(objectUrl);
+      progressValue.textContent = "100%";
+      progressFill.style.width = "100%";
+      progressLabel.textContent = "اكتمل التنزيل";
+      downloadStatus.textContent = "اكتمل تجهيز ملف التنزيل.";
+    } catch {
+      downloadStatus.textContent = "تعذر تنزيل الملف. تحقق من رابط الملف وإتاحته."; 
+    }
+  }
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && downloadPanel && !downloadPanel.hidden) closeDownloadPanel();
+  });
 })();
