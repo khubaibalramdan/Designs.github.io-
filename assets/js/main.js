@@ -155,6 +155,46 @@
   scrim.addEventListener("click", closeMenu);
   menu.querySelectorAll("a").forEach((link) => link.addEventListener("click", closeMenu));
 
+  // Show only sections that contain real content; keep navigation in sync.
+  const contentSections = document.querySelectorAll(".content-section");
+  const sectionLinks = new Map(
+    Array.from(menu.querySelectorAll('a[href^="#"]'), (link) => [link.hash, link])
+  );
+
+  function sectionHasContent(container) {
+    return Array.from(container.childNodes).some((node) => {
+      if (node.nodeType === Node.ELEMENT_NODE) return true;
+      return node.nodeType === Node.TEXT_NODE && node.textContent.trim().length > 0;
+    });
+  }
+
+  function refreshContentSections() {
+    contentSections.forEach((section) => {
+      const content = section.querySelector(".section-content");
+      if (!content) return;
+
+      const visible = sectionHasContent(content);
+      section.hidden = !visible;
+      section.setAttribute("aria-hidden", String(!visible));
+
+      const link = sectionLinks.get("#" + section.id);
+      if (link) link.hidden = !visible;
+    });
+  }
+
+  const sectionContentObserver = new MutationObserver(refreshContentSections);
+  contentSections.forEach((section) => {
+    const content = section.querySelector(".section-content");
+    if (content) {
+      sectionContentObserver.observe(content, {
+        childList: true,
+        subtree: true,
+        characterData: true
+      });
+    }
+  });
+  refreshContentSections();
+
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && menu.classList.contains("is-open")) {
       closeMenu();
