@@ -168,41 +168,23 @@
   const jobs = new Map();
   const finish = app => { show(app, 100); app.classList.replace("is-loading", "is-done"); sparkle(app); shine(card); Sfx.done(); };
   const reset = app => { app.classList.remove("is-loading", "is-done"); app.style.removeProperty("--p"); };
-  const saveBlob = (blob, name) => {
-    const url = URL.createObjectURL(blob), a = document.createElement("a");
-    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 60000);
-  };
 
   const download = async (app, who) => {
-    const ctrl = new AbortController(); jobs.set(app, ctrl);
-    show(app, 1); Sfx.tap();
-    status.textContent = "جارٍ التنزيل…";
+    jobs.set(app, { abort() {} });
+    Sfx.tap();
+    status.textContent = "جارٍ تجهيز التنزيل…";
     let asset;
     try { asset = assetFor(await latest(), who); } catch (e) { asset = null; }
     if (!asset) { jobs.delete(app); reset(app); status.textContent = "ملف التطبيق غير متوفر حالياً، جرّب بعد قليل"; return; }
-    try {
-      // The API asset address answers with the file and allows the page to read it, so the counter is real.
-      const res = await fetch(asset.url, { headers: { Accept: "application/octet-stream" }, signal: ctrl.signal });
-      if (!res.ok || !res.body) throw new Error("http");
-      const total = +res.headers.get("content-length") || asset.size || 0;
-      const reader = res.body.getReader(); const parts = []; let got = 0;
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        parts.push(value); got += value.length;
-        if (total) show(app, Math.max(1, Math.min(99, Math.floor(got / total * 100))));
-      }
-      saveBlob(new Blob(parts, { type: "application/vnd.android.package-archive" }), asset.name);
-      jobs.delete(app); finish(app);
-      status.textContent = "اكتمل التنزيل. افتح الملف من الإشعارات لتثبيته";
-    } catch (e) {
-      jobs.delete(app);
-      if (ctrl.signal.aborted) return;
-      // Fallback: the phone's own downloader takes over (no counter possible here).
-      const a = document.createElement("a"); a.href = asset.browser_download_url; a.rel = "noopener"; document.body.appendChild(a); a.click(); a.remove();
-      finish(app); status.textContent = "بدأ التنزيل من المتصفح، تابعه من الإشعارات";
-    }
+    // GitHub's file server does not let a page read release files, so the phone's own downloader takes over:
+    // the icon shows a golden spin while it starts, and the real percentage is in the phone's download notification.
+    jobs.delete(app);
+    const a = document.createElement("a"); a.href = asset.browser_download_url; a.rel = "noopener";
+    document.body.appendChild(a); a.click(); a.remove();
+    app.classList.add("is-started"); app.querySelector("[data-num]").textContent = "";
+    shine(card);
+    status.textContent = "بدأ التنزيل. تابع النسبة من إشعارات الجوال، وبعدها افتح الملف لتثبيته";
+    setTimeout(() => { app.classList.remove("is-started"); reset(app); }, 6000);
   };
 
   card.querySelectorAll(".app").forEach(app => {
