@@ -202,59 +202,71 @@
   document.addEventListener("keydown", retryBlockedPlayback, true);
 
 
-  // Abnaa Al Shamal in-site download panel.
-  const projectCard = document.querySelector(".project-card");
-  const downloadPanel = document.getElementById("project-download");
-  const downloadClose = document.getElementById("download-close");
+  // The project card morphs in place into its download face.
+  const projectCard = document.getElementById("abnaa-project-card");
+  const backToProject = projectCard && projectCard.querySelector(".card-back");
   const downloadStatus = document.getElementById("download-status");
   const downloadProgress = document.getElementById("download-progress");
   const progressLabel = document.getElementById("progress-label");
   const progressValue = document.getElementById("progress-value");
   const progressFill = document.getElementById("progress-fill");
 
-  function closeDownloadPanel() {
-    if (!downloadPanel) return;
-    downloadPanel.hidden = true;
-    downloadPanel.setAttribute("aria-hidden", "true");
-    document.body.classList.remove("download-open");
+  function showProjectDetails() {
+    if (!projectCard) return;
+    projectCard.classList.remove("is-download-view", "is-transitioning");
+    const face = projectCard.querySelector(".project-download-face");
+    if (face) face.setAttribute("aria-hidden", "true");
+    const details = projectCard.querySelector(".project-details-face");
+    if (details) details.setAttribute("aria-hidden", "false");
+    projectCard.setAttribute("aria-label", "أبناء الشمال — تفاصيل المشروع");
   }
 
-  function openDownloadPanel() {
-    if (!downloadPanel) return;
-    downloadPanel.hidden = false;
-    downloadPanel.setAttribute("aria-hidden", "false");
-    document.body.classList.add("download-open");
-    downloadClose.focus();
+  function showProjectDownloads() {
+    if (!projectCard || projectCard.classList.contains("is-download-view")) return;
+    projectCard.classList.add("is-transitioning");
+    window.setTimeout(() => {
+      projectCard.classList.add("is-download-view");
+      projectCard.classList.remove("is-transitioning");
+      const details = projectCard.querySelector(".project-details-face");
+      const face = projectCard.querySelector(".project-download-face");
+      if (details) details.setAttribute("aria-hidden", "true");
+      if (face) face.setAttribute("aria-hidden", "false");
+      projectCard.setAttribute("aria-label", "تنزيلات أبناء الشمال — Android وiPhone");
+    }, 180);
   }
 
   if (projectCard) {
     projectCard.tabIndex = 0;
     projectCard.setAttribute("role", "button");
-    projectCard.setAttribute("aria-haspopup", "dialog");
-    projectCard.setAttribute("aria-label", "فتح تنزيل تطبيقات أبناء الشمال");
-    projectCard.addEventListener("click", openDownloadPanel);
+    projectCard.setAttribute("aria-label", "فتح بطاقة تنزيلات أبناء الشمال");
+    projectCard.addEventListener("click", (event) => {
+      if (event.target.closest(".card-back, .app-download")) return;
+      if (!projectCard.classList.contains("is-download-view")) showProjectDownloads();
+    });
     projectCard.addEventListener("keydown", (event) => {
       if (event.target !== projectCard) return;
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
-        openDownloadPanel();
+        showProjectDownloads();
       }
     });
   }
 
-  if (downloadClose) downloadClose.addEventListener("click", closeDownloadPanel);
-  if (downloadPanel) {
-    downloadPanel.querySelectorAll("[data-download-close]").forEach((el) => el.addEventListener("click", closeDownloadPanel));
-    downloadPanel.addEventListener("click", (event) => {
+  if (backToProject) backToProject.addEventListener("click", (event) => {
+    event.stopPropagation();
+    showProjectDetails();
+  });
+
+  if (projectCard) {
+    projectCard.addEventListener("click", (event) => {
       const button = event.target.closest(".app-download");
       if (!button) return;
-      const appName = button.dataset.app;
-      const downloadUrl = button.dataset.url;
-      if (!downloadUrl) {
+      const url = button.dataset.url;
+      if (!url) {
         if (downloadStatus) downloadStatus.textContent = "ملف هذا التطبيق لم يُربط بعد. لن يبدأ تنزيل غير متاح.";
         return;
       }
-      startRealDownload(downloadUrl, appName);
+      startRealDownload(url, button.dataset.app);
     });
   }
 
@@ -295,11 +307,11 @@
       progressLabel.textContent = "اكتمل التنزيل";
       downloadStatus.textContent = "اكتمل تجهيز ملف التنزيل.";
     } catch {
-      downloadStatus.textContent = "تعذر تنزيل الملف. تحقق من رابط الملف وإتاحته."; 
+      downloadStatus.textContent = "تعذر تنزيل الملف. تحقق من رابط الملف وإتاحته.";
     }
   }
 
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && downloadPanel && !downloadPanel.hidden) closeDownloadPanel();
+    if (event.key === "Escape" && projectCard && projectCard.classList.contains("is-download-view")) showProjectDetails();
   });
 })();
