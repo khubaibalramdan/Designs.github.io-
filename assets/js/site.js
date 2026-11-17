@@ -183,12 +183,15 @@
     // GitHub's file server does not let a page read release files, so the phone's own downloader takes over:
     // the icon shows a golden spin while it starts, and the real percentage is in the phone's download notification.
     jobs.delete(app);
-    const a = document.createElement("a"); a.href = asset.browser_download_url; a.rel = "noopener";
-    document.body.appendChild(a); a.click(); a.remove();
+    // A hidden frame fetches the file, so the page itself never moves to another screen.
+    const f = document.createElement("iframe");
+    f.hidden = true; f.setAttribute("aria-hidden", "true"); f.src = asset.browser_download_url;
+    document.body.appendChild(f); setTimeout(() => f.remove(), 120000);
     app.classList.add("is-started"); app.querySelector("[data-num]").textContent = "";
     shine(card);
-    status.textContent = "بدأ التنزيل. تابع النسبة من إشعارات الجوال، وبعدها افتح الملف لتثبيته";
-    setTimeout(() => { app.classList.remove("is-started"); reset(app); }, 6000);
+    status.textContent = "جارٍ التنزيل… تابع النسبة من إشعارات الجوال، وبعدها افتح الملف لتثبيته";
+    setTimeout(() => { app.classList.replace("is-started", "is-sent"); sparkle(app); Sfx.done(); }, 7000);
+    setTimeout(() => { app.classList.remove("is-sent"); reset(app); }, 10000);
   };
 
   card.querySelectorAll(".app").forEach(app => {
