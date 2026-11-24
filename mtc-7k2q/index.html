@@ -340,7 +340,9 @@ function enter() {
     store.set("mtk", v); store.set("mtm", mode); if (mode === "legacy") store.set("mtk2", tok);
     $("#login").classList.add("hide"); data = r; render();
   }, e => {
-    if (String(e && e.message) === "UNKNOWN_ACTION" && mode === "console") { $("#tok").classList.remove("hide"); $("#tok").focus(); return; }
+    const m = String(e && e.message);
+    // Current server checks the API token before anything else, so the console route answers UNAUTHORIZED.
+    if ((m === "UNKNOWN_ACTION" || m === "UNAUTHORIZED") && mode === "console") { $("#tok").classList.remove("hide"); $("#tok").focus(); toast("أدخل API TOKEN"); return; }
     key = null; fail(e);
   });
 }
