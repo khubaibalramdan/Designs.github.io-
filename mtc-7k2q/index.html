@@ -100,6 +100,7 @@ button,input{font:inherit;color:inherit}
 .login .mk svg{width:44px;height:44px}
 .login small{font:300 11px/1 Montserrat,sans-serif;letter-spacing:.5em;color:var(--mute);margin-bottom:22px}
 .hide{display:none!important}
+.lab{font:600 11px/1 Montserrat,sans-serif;letter-spacing:.16em;color:var(--mute);text-align:left;direction:ltr;margin:4px 2px -8px}
 </style>
 </head>
 <body>
@@ -109,8 +110,10 @@ button,input{font:inherit;color:inherit}
   <div class="box">
     <div class="mk">M<svg><use href="#h"/></svg>T</div>
     <small>CONSOLE</small>
-    <input class="in mono" id="key" type="password" autocomplete="current-password" placeholder="ADMIN KEY" dir="ltr">
-    <input class="in mono hide" id="tok" type="password" autocomplete="off" placeholder="API TOKEN" dir="ltr">
+    <label class="lab">ADMIN_KEY</label>
+    <input class="in mono" id="key" type="password" autocomplete="current-password" placeholder="ADMIN_KEY" dir="ltr">
+    <label class="lab hide" id="tokl">API_TOKEN</label>
+    <input class="in mono hide" id="tok" type="password" autocomplete="off" placeholder="API_TOKEN" dir="ltr">
     <button class="btn" id="enter">دخول</button>
   </div>
 </div>
@@ -145,7 +148,7 @@ button,input{font:inherit;color:inherit}
 const $ = s => document.querySelector(s);
 const esc = v => String(v == null ? "" : v).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const store = { get(k){ try { return localStorage.getItem(k); } catch(e) { return null; } }, set(k,v){ try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k,v); } catch(e) {} } };
-const ERR = { ADMIN_UNAUTHORIZED:"المفتاح غير صحيح", SERVER_BUSY:"الخادم مشغول، أعد المحاولة", INVALID_CODE_DURATION:"مدة غير صالحة", INVALID_TRIAL_DAYS:"مدة غير صالحة", INVALID_EXTENSION_DAYS:"مدة غير صالحة", DEVICE_NOT_FOUND:"الجهاز غير موجود", CODE_ALREADY_REDEEMED:"الكود مستخدم", INVALID_DEVICE_ID:"رقم جهاز غير صالح" };
+const ERR = { ADMIN_UNAUTHORIZED:"ADMIN_KEY غلط", UNAUTHORIZED:"API_TOKEN غلط", SERVER_BUSY:"الخادم مشغول، أعد المحاولة", INVALID_CODE_DURATION:"مدة غير صالحة", INVALID_TRIAL_DAYS:"مدة غير صالحة", INVALID_EXTENSION_DAYS:"مدة غير صالحة", DEVICE_NOT_FOUND:"الجهاز غير موجود", CODE_ALREADY_REDEEMED:"الكود مستخدم", INVALID_DEVICE_ID:"رقم جهاز غير صالح" };
 const GL = { trial:"تجربة", paid:"VIP", expired:"منتهي", blocked:"محظور" };
 let key = store.get("mtk"), data = null, tab = "dev", filter = "", sel = null;
 
@@ -342,7 +345,7 @@ function enter() {
   }, e => {
     const m = String(e && e.message);
     // Current server checks the API token before anything else, so the console route answers UNAUTHORIZED.
-    if ((m === "UNKNOWN_ACTION" || m === "UNAUTHORIZED") && mode === "console") { $("#tok").classList.remove("hide"); $("#tok").focus(); toast("أدخل API TOKEN"); return; }
+    if ((m === "UNKNOWN_ACTION" || m === "UNAUTHORIZED") && mode === "console") { $("#tok").classList.remove("hide"); $("#tokl").classList.remove("hide"); $("#tok").focus(); toast("أدخل API_TOKEN"); return; }
     key = null; fail(e);
   });
 }
