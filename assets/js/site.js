@@ -253,6 +253,28 @@
     });
   }
 
+  // Rafeeq Darbak card (Android only): APK in this repo's fixed "rafeeq" release, published from
+  // Rafeq-Aldarb- and never marked "latest". The app's update notice (Google Sheet) points here.
+  const rf = document.querySelector(".card.rafeeq");
+  if (rf) {
+    const st = rf.querySelector("[data-rf-status]");
+    rf.querySelector("[data-rf-get]").addEventListener("click", async () => {
+      Sfx.tap(); shine(rf);
+      if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) { st.textContent = "التطبيق متوفر لأندرويد فقط"; return; }
+      st.textContent = "جارٍ تجهيز التنزيل…";
+      try {
+        const r = await fetch(`https://api.github.com/repos/${REPO}/releases/tags/rafeeq`, { headers: { Accept: "application/vnd.github+json" } });
+        const rel = r.ok ? await r.json() : null;
+        const a = rel && (rel.assets || []).find(x => /^rafeeq-darb-.*\.apk$/i.test(x.name));
+        if (!a) throw new Error("no-apk");
+        const f = document.createElement("iframe");
+        f.hidden = true; f.setAttribute("aria-hidden", "true"); f.src = a.browser_download_url;
+        document.body.appendChild(f); setTimeout(() => f.remove(), 120000);
+        st.textContent = "بدأ التنزيل. افتح الملف من الإشعارات لتثبيته";
+      } catch (e) { st.textContent = "ملف التطبيق غير متوفر حالياً، جرّب بعد قليل"; }
+    });
+  }
+
   // QR: one for the page, one per project. Scanning a project code opens the page straight on its downloads.
   const sheet = document.getElementById("qr-sheet");
   const QR_TEXT = {
@@ -275,6 +297,45 @@
   sheet.addEventListener("click", e => { if (e.target === sheet) closeQR(); });
   document.addEventListener("keydown", e => { if (e.key === "Escape") closeQR(); });
 
+  // «شو فائدته؟»: short explanation of each app, opened from the ⓘ button on its card.
+  const infoSheet = document.getElementById("info-sheet");
+  const INFO = {
+    abnaa: ["أبناء الشمال", [
+      "تطبيقين: واحد للكابتن وواحد للعميل، بدل قروبات الواتساب",
+      "العميل بيطلب مقعد لعمّان أو إربد أو الرمثا، وبيختار الطريق وعدد المقاعد",
+      "الكابتن بتوصله الطلبات حسب وجهته، وبيقبل أو بيرفض بكبسة",
+      "عداد للرحلة وسجل رحلات للكابتن",
+      "متوفر لأندرويد وآيفون"]],
+    mytouch: ["My-touch", [
+      "بيقبل طلبات جيني عنك تلقائياً وبسرعة",
+      "إنت بتحدد أقل سعر وأقصى مسافة، وهو بيقبل بس الطلبات المناسبة",
+      "تجربة مجانية 3 أيام، وبعدها دفعة وحدة 5 دنانير مدى الحياة",
+      "لأندرويد فقط"]],
+    rafeeq: ["رفيق دربك للكابتن", [
+      "عداد أجرة بالـGPS بيحسب المسافة والوقت",
+      "حاسبة للكابتن، ومالية لحساب الدخل والمصاريف، وسجل رحلات",
+      "أوقات الصلاة واتجاه القبلة",
+      "تجربة مجانية 3 أيام، وبعدها دفعة وحدة 5 دنانير مدى الحياة",
+      "لأندرويد فقط"]],
+    cashier: ["الكاشير الذكي", [
+      "نظام كاش ومخزون للسوبر ماركت والمحلات",
+      "قريباً"]]
+  };
+  let infoFocus = null;
+  const openInfo = key => {
+    infoFocus = document.activeElement;
+    infoSheet.querySelector("[data-info-title]").textContent = INFO[key][0];
+    const ul = infoSheet.querySelector("[data-info-list]");
+    ul.replaceChildren(...INFO[key][1].map(t => { const li = document.createElement("li"); li.textContent = t; return li; }));
+    infoSheet.hidden = false; Sfx.tap();
+    infoSheet.querySelector("[data-info-close]").focus();
+  };
+  const closeInfo = () => { if (infoSheet.hidden) return; infoSheet.hidden = true; Sfx.back(); if (infoFocus) infoFocus.focus(); };
+  document.querySelectorAll("[data-info]").forEach(b => b.addEventListener("click", e => { e.stopPropagation(); openInfo(b.dataset.info); }));
+  infoSheet.querySelector("[data-info-close]").addEventListener("click", closeInfo);
+  infoSheet.addEventListener("click", e => { if (e.target === infoSheet) closeInfo(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeInfo(); });
+
   // Deep link from a project QR: ?p=abnaa -> centre that card and open its downloads for this phone.
   if (q.get("p") === "abnaa") {
     const ua = navigator.userAgent;
@@ -286,6 +347,11 @@
   if (q.get("p") === "mytouch") {
     const mc = document.querySelector(".card.mytouch");
     if (mc) deck.slideTo([...deck.slides].findIndex(sl => sl.contains(mc)), 0);
+  }
+  // ?p=rafeeq -> centre the Rafeeq Darbak card (link inside the app's update notice).
+  if (q.get("p") === "rafeeq") {
+    const rc = document.querySelector(".card.rafeeq");
+    if (rc) deck.slideTo([...deck.slides].findIndex(sl => sl.contains(rc)), 0);
   }
   // ?p=cashier -> centre the Smart Cashier card.
   if (q.get("p") === "cashier") {

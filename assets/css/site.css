@@ -218,3 +218,13 @@ svg{display:block}
 @media (prefers-reduced-motion:reduce){#sound .on svg{animation:none}}
 .cashier .desc{margin:0}
 .cashier .desc.latin{font:500 15px Montserrat,sans-serif;letter-spacing:.06em;color:var(--gold-hi)}
+
+/* «شو فائدته؟» button on each app card + its sheet */
+.info-mini{position:absolute;top:16px;left:16px;z-index:4;display:grid;place-items:center;width:40px;height:40px;border-radius:12px;cursor:pointer;color:var(--gold-hi);background:rgba(12,8,6,.5);border:1px solid rgba(242,184,75,.45)}
+.qr-mini~.info-mini{top:64px}
+.info-mini svg{width:22px;height:22px}
+.info-panel{text-align:right}
+.info-panel h2{text-align:center}
+.info-list{margin:0;padding:0;list-style:none;display:grid;gap:10px}
+.info-list li{position:relative;padding-right:18px;color:var(--text);font-size:15px;line-height:1.7}
+.info-list li::before{content:"";position:absolute;right:2px;top:.72em;width:7px;height:7px;border-radius:50%;background:var(--gold-hi)}
