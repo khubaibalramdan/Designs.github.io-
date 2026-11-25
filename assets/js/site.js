@@ -227,6 +227,28 @@
   });
 
 
+  // My-touch card (Android only): the APK sits in this repo's fixed "my-touch" release, published from
+  // Project-4 and never marked "latest", so the Abnaa downloads above keep using the latest release.
+  const mt = document.querySelector(".card.mytouch");
+  if (mt) {
+    const st = mt.querySelector("[data-mt-status]");
+    mt.querySelector("[data-mt-get]").addEventListener("click", async () => {
+      Sfx.tap(); shine(mt);
+      if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) { st.textContent = "التطبيق متوفر لأندرويد فقط"; return; }
+      st.textContent = "جارٍ تجهيز التنزيل…";
+      try {
+        const r = await fetch(`https://api.github.com/repos/${REPO}/releases/tags/my-touch`, { headers: { Accept: "application/vnd.github+json" } });
+        const rel = r.ok ? await r.json() : null;
+        const a = rel && (rel.assets || []).find(x => /^my-touch-.*\.apk$/i.test(x.name));
+        if (!a) throw new Error("no-apk");
+        const f = document.createElement("iframe");
+        f.hidden = true; f.setAttribute("aria-hidden", "true"); f.src = a.browser_download_url;
+        document.body.appendChild(f); setTimeout(() => f.remove(), 120000);
+        st.textContent = "بدأ التنزيل. افتح الملف من الإشعارات لتثبيته";
+      } catch (e) { st.textContent = "ملف التطبيق غير متوفر حالياً، جرّب بعد قليل"; }
+    });
+  }
+
   // QR: one for the page, one per project. Scanning a project code opens the page straight on its downloads.
   const sheet = document.getElementById("qr-sheet");
   const QR_TEXT = {
@@ -255,6 +277,11 @@
     const pf = /iPhone|iPad|iPod/i.test(ua) ? "ios" : /Android/i.test(ua) ? "android" : null;
     deck.slideTo([...deck.slides].findIndex(sl => sl.contains(card)), 0);
     if (pf) setStage("2", pf, true); else setStage("1", null, true);
+  }
+  // ?p=mytouch -> centre the My-touch card (link used in the WhatsApp ad).
+  if (q.get("p") === "mytouch") {
+    const mc = document.querySelector(".card.mytouch");
+    if (mc) deck.slideTo([...deck.slides].findIndex(sl => sl.contains(mc)), 0);
   }
   // ?p=cashier -> centre the Smart Cashier card.
   if (q.get("p") === "cashier") {
