@@ -3,13 +3,14 @@
   const q = new URLSearchParams(location.search);
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // Splash: K♡T, the heart is the way in. Tap -> tone (2.5 s) -> page, then the ambient track fades in over 5 s.
+  // Splash: K♡T opens by itself: tone (2.5 s, soft) -> page, then the ambient track fades in over 5 s.
+  // Browsers allow sound only after a touch, so in a plain browser tab the splash may run silent.
   const splash = document.getElementById("splash");
   const enter = document.getElementById("enter");
   const tone = document.getElementById("tone");
   const ambient = document.getElementById("ambient");
   const soundBtn = document.getElementById("sound");
-  const SPLASH_MS = 2500, FADE_MS = 5000, AMBIENT_VOL = 0.15;
+  const SPLASH_MS = 2500, FADE_MS = 5000, AMBIENT_VOL = 0.15, TONE_VOL = 0.45;
   let muted = false, ambientStarted = false, entered = false;
 
   const startAmbient = () => {
@@ -37,6 +38,7 @@
     entered = true;
     splash.classList.add("is-entering");
     tone.muted = muted;
+    tone.volume = TONE_VOL;
     tone.currentTime = 0;
     tone.play().catch(() => {});
     if (window.gsap && !reduce) {
@@ -54,7 +56,9 @@
 
   enter.addEventListener("click", doEnter);
   if (q.has("ns")) { splash.remove(); entered = true; }
-  else if (q.has("auto")) setTimeout(doEnter, 1200);
+  else doEnter();
+  // Without a touch the browser may refuse the ambient track: start it on the first touch instead.
+  document.addEventListener("pointerdown", () => { if (entered && !muted && !splash.isConnected) startAmbient(); }, { once: true, capture: true });
 
   soundBtn.addEventListener("click", () => {
     muted = !muted;
@@ -319,13 +323,6 @@
   document.addEventListener("keydown", e => { if (e.key === "Escape") closeInst(); });
 
   if ("serviceWorker" in navigator && window.isSecureContext && location.protocol !== "file:") navigator.serviceWorker.register("sw.js").catch(() => {});
-
-  // Installed on Android the phone allows sound without a tap: the splash then plays by itself.
-  if (standalone && !q.has("ns")) {
-    const allowed = navigator.getAutoplayPolicy ? Promise.resolve(navigator.getAutoplayPolicy("mediaelement") === "allowed")
-      : (tone.volume = 0, tone.play().then(() => { tone.pause(); tone.currentTime = 0; return true; }, () => false));
-    allowed.then(ok => { tone.volume = 1; if (ok) setTimeout(doEnter, 700); });
-  }
 
   if (q.get("s")) setStage(q.get("s"), q.get("pf") || "android", true);
   if (q.get("pct")) show(card.querySelector('[data-app="captain"]'), q.get("pct"));
