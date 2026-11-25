@@ -243,7 +243,9 @@
       try {
         const r = await fetch(`https://api.github.com/repos/${REPO}/releases/tags/my-touch`, { headers: { Accept: "application/vnd.github+json" } });
         const rel = r.ok ? await r.json() : null;
-        const a = rel && (rel.assets || []).find(x => /^my-touch-.*\.apk$/i.test(x.name));
+        // Highest my-touch-v<N>.apk wins (an old file left on the release can never be picked over a newer one).
+        const ver = x => { const m = /^my-touch-v(\d+)\.apk$/i.exec(x.name); return m ? +m[1] : -1; };
+        const a = rel && (rel.assets || []).filter(x => /^my-touch-.*\.apk$/i.test(x.name)).sort((p, q) => ver(q) - ver(p))[0];
         if (!a) throw new Error("no-apk");
         const f = document.createElement("iframe");
         f.hidden = true; f.setAttribute("aria-hidden", "true"); f.src = a.browser_download_url;
