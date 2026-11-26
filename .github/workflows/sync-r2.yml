@@ -1,0 +1,96 @@
+# Copies the newest APK of each app from this repo's GitHub Releases to Cloudflare R2,
+# so the K♡T page can download it itself and show the real 0 -> 100 progress.
+# The page reads latest.json from the bucket's public URL.
+# Needs three repo secrets (added by the owner, never written in code): R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY.
+name: Sync APKs to R2
+
+on:
+  release:
+    types: [published, released, edited]
+  schedule:
+    - cron: "23 * * * *"     # hourly safety net (e.g. a new file added to an existing release)
+  workflow_dispatch:
+
+concurrency:
+  group: sync-r2
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BUCKET: abotala-apps
+      PAGE_ORIGIN: https://khubaibalramdan.github.io
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      AWS_DEFAULT_REGION: auto
+      AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+      AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+    steps:
+      - name: Check setup
+        id: setup
+        run: |
+          if [ -z "$AWS_ACCESS_KEY_ID" ] || [ -z "$AWS_SECRET_ACCESS_KEY" ] || [ -z "$R2_ACCOUNT_ID" ]; then
+            echo "R2 secrets are not added yet: nothing to do."; echo "ready=false" >> "$GITHUB_OUTPUT"
+          else echo "ready=true" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Sync
+        if: steps.setup.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          EP="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          s3() { aws --endpoint-url "$EP" "$@"; }
+
+          # Let the publishing workflow finish uploading its files after a release event.
+          if [ "${{ github.event_name }}" = "release" ]; then sleep 90; fi
+
+          # Newest file of each app (same rules the page used before).
+          api() { gh api "repos/$REPO/releases/$1" 2>/dev/null || echo '{}'; }
+          LATEST=$(api latest); MT=$(api tags/my-touch); RF=$(api tags/rafeeq)
+          pick() { jq -c --arg re "$2" '[.assets[]? | select(.state=="uploaded") | select(.name|test($re;"i"))] | sort_by(.name | (try (capture("(?<n>[0-9]+)\\.apk$").n | tonumber) catch -1)) | last | if . == null then null else {file:.name,size:.size,id:.id} end' <<<"$1"; }
+          NEW=$(jq -n \
+            --argjson c "$(pick "$LATEST" '^abnaa-captain-.*\.apk$')" \
+            --argjson r "$(pick "$LATEST" '^abnaa-rider-.*\.apk$')" \
+            --argjson m "$(pick "$MT" '^my-touch-.*\.apk$')" \
+            --argjson f "$(pick "$RF" '^rafeeq-darb-.*\.apk$')" \
+            '{captain:$c, rider:$r, mytouch:$m, rafeeq:$f} | with_entries(select(.value != null))')
+          echo "Newest files:"; echo "$NEW" | jq .
+
+          # CORS: only the K♡T page may read the files (needed for the real progress).
+          cat > cors.json <<EOF
+          {"CORSRules":[{"AllowedOrigins":["$PAGE_ORIGIN"],"AllowedMethods":["GET","HEAD"],"AllowedHeaders":["*"],"ExposeHeaders":["Content-Length","ETag"],"MaxAgeSeconds":86400}]}
+          EOF
+          s3 s3api put-bucket-cors --bucket "$BUCKET" --cors-configuration file://cors.json
+
+          # Upload what is missing.
+          HAVE=$(s3 s3api list-objects-v2 --bucket "$BUCKET" --query 'Contents[].Key' --output json 2>/dev/null || echo '[]')
+          [ "$HAVE" = "null" ] && HAVE='[]'
+          for k in $(jq -r 'keys[]' <<<"$NEW"); do
+            file=$(jq -r ".$k.file" <<<"$NEW"); id=$(jq -r ".$k.id" <<<"$NEW"); size=$(jq -r ".$k.size" <<<"$NEW")
+            if jq -e --arg f "$file" 'index($f) != null' <<<"$HAVE" >/dev/null; then echo "= $file already in R2"; continue; fi
+            echo "+ uploading $file"
+            curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/octet-stream" \
+              "https://api.github.com/repos/$REPO/releases/assets/$id" -o "$file"
+            [ "$(stat -c %s "$file")" = "$size" ] || { echo "size mismatch for $file"; exit 1; }
+            s3 s3 cp "$file" "s3://$BUCKET/$file" --content-type application/vnd.android.package-archive \
+              --cache-control "public, max-age=31536000, immutable"
+            rm -f "$file"
+          done
+
+          # Publish the list the page reads, then remove old versions (stays far under the free 10 GB).
+          jq 'map_values({file, size})' <<<"$NEW" > latest.json
+          s3 s3 cp latest.json "s3://$BUCKET/latest.json" --content-type application/json --cache-control "no-store"
+          for key in $(jq -r '.[]' <<<"$HAVE"); do
+            [ "$key" = "latest.json" ] && continue
+            if ! jq -e --arg f "$key" '[.[].file] | index($f) != null' latest.json >/dev/null; then
+              echo "- removing old $key"; s3 s3 rm "s3://$BUCKET/$key"
+            fi
+          done
+          echo "Done:"; cat latest.json

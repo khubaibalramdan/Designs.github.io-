@@ -1,10 +1,10 @@
 // Offline shell for the K♡T page. It answers ONLY for the page's own files listed below;
 // everything else (the iPhone apps in ./rider/ and ./captain/, GitHub downloads, the API) goes straight to the network.
-const VERSION = "kt-14";
+const VERSION = "kt-15";
 const SHELL = [
   "./", "index.html", "manifest.webmanifest",
   "assets/css/site.css", "assets/js/site.js",
-  "assets/vendor/swiper-bundle.min.css", "assets/vendor/swiper-bundle.min.js", "assets/vendor/gsap.min.js",
+  "assets/vendor/swiper-bundle.min.css", "assets/vendor/swiper-bundle.min.js",
   "assets/img/bg-sunset.webp", "assets/img/rider.webp", "assets/img/captain.webp", "assets/img/cashier.webp", "assets/img/mytouch.webp", "assets/img/rafeeq.webp", "assets/img/rafeeq-voice.webp",
   "assets/icons/icon-192.png", "assets/icons/apple-touch-icon.png", "assets/icons/favicon-48.png",
   "assets/fonts/noto-kufi-arabic-arabic-400-normal.woff2", "assets/fonts/noto-kufi-arabic-arabic-500-normal.woff2",

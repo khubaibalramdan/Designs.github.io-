@@ -3,19 +3,20 @@
   const q = new URLSearchParams(location.search);
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // Splash: K♡T opens by itself: tone (2.5 s, soft) -> page, then the ambient track fades in over 5 s.
+  // Splash: K♡T opens by itself: soft tone (1.5 s, low, faded out) -> page, then the ambient track fades in.
   // Browsers allow sound only after a touch, so in a plain browser tab the splash may run silent.
   const splash = document.getElementById("splash");
   const enter = document.getElementById("enter");
   const tone = document.getElementById("tone");
   const ambient = document.getElementById("ambient");
   const soundBtn = document.getElementById("sound");
-  const SPLASH_MS = 2500, FADE_MS = 5000, AMBIENT_VOL = 0.15, TONE_VOL = 0.45;
+  const SPLASH_MS = 1500, FADE_MS = 4000, AMBIENT_VOL = 0.12, TONE_VOL = 0.18;
   let muted = false, ambientStarted = false, entered = false;
 
   const startAmbient = () => {
     if (ambientStarted) return;
     ambientStarted = true;
+    ambient.preload = "auto";
     ambient.volume = 0; ambient.muted = muted;
     ambient.play().catch(() => { ambientStarted = false; });
     const t0 = performance.now();
@@ -27,10 +28,22 @@
     requestAnimationFrame(step);
   };
 
+  // The tone fades to silence by the end of the splash, so it never plays over the ambient track.
+  const fadeTone = () => {
+    const v0 = tone.volume, t0 = performance.now();
+    const step = now => {
+      const k = Math.min(1, (now - t0) / 350);
+      tone.volume = v0 * (1 - k);
+      if (k < 1) requestAnimationFrame(step); else tone.pause();
+    };
+    requestAnimationFrame(step);
+  };
+
   const closeSplash = () => {
+    fadeTone();
     splash.classList.add("gone");
-    setTimeout(() => splash.remove(), 700);
-    startAmbient();               // only after the tone has finished: never both at once
+    setTimeout(() => splash.remove(), 500);
+    setTimeout(startAmbient, 400);
   };
 
   const doEnter = () => {
@@ -41,16 +54,6 @@
     tone.volume = TONE_VOL;
     tone.currentTime = 0;
     tone.play().catch(() => {});
-    if (window.gsap && !reduce) {
-      const tl = gsap.timeline();
-      tl.to(enter, { scale: 1.45, duration: .16, ease: "power2.out" })
-        .to(enter, { scale: 1, duration: .22, ease: "power2.in" })
-        .to(enter, { scale: 1.3, duration: .14, ease: "power2.out" })
-        .to(enter, { scale: 1, duration: .3, ease: "power2.inOut" })
-        .to(".burst", { opacity: 1, scale: 70, duration: 1.7, ease: "power2.in" }, .1)
-        .to(".splash-mark span, .splash-name", { opacity: 0, duration: .7 }, .9)
-        .to(enter, { opacity: 0, duration: .5 }, 1.7);
-    }
     setTimeout(closeSplash, SPLASH_MS);
   };
 
@@ -130,14 +133,15 @@
   if (!reduce) setInterval(() => { const a = document.querySelector(".swiper-slide-active .card"); if (a && !document.hidden) shine(a); }, 7000);
   deck.on("slideChange", () => Sfx.swipe());
   deck.on("slideChangeTransitionEnd", () => { const a = document.querySelector(".swiper-slide-active .card"); if (a) shine(a); });
-  const sparkle = app => {
-    const box = app.querySelector(".sparks"); box.innerHTML = "";
-    for (let i = 0; i < 14; i++) box.appendChild(document.createElement("i"));
-    if (!window.gsap || reduce) return;
-    box.querySelectorAll("i").forEach((d, i) => {
-      const a = (i / 14) * Math.PI * 2, r = 62 + Math.random() * 26;
-      gsap.fromTo(d, { x: 0, y: 0, opacity: 1, scale: 1 }, { x: Math.cos(a) * r, y: Math.sin(a) * r, opacity: 0, scale: .3, duration: .9, ease: "power2.out" });
-    });
+  const sparkle = el => {
+    const box = el.querySelector(".sparks"); if (!box) return; box.innerHTML = "";
+    if (reduce) return;
+    for (let i = 0; i < 14; i++) {
+      const d = document.createElement("i"), a = (i / 14) * Math.PI * 2, r = 62 + Math.random() * 26;
+      d.style.setProperty("--x", `${Math.cos(a) * r}px`); d.style.setProperty("--y", `${Math.sin(a) * r}px`);
+      box.appendChild(d);
+    }
+    setTimeout(() => { box.innerHTML = ""; }, 1000);
   };
   const setStage = (stage, platform, quiet) => {
     shine(card);
@@ -159,123 +163,129 @@
   card.querySelectorAll("[data-pick]").forEach(b => b.addEventListener("click", () => setStage("2", b.dataset.pick)));
   card.querySelectorAll("[data-back]").forEach(b => b.addEventListener("click", () => setStage(card.dataset.stage === "2" && !myPhone ? "1" : "0")));
 
-  // Progress 1..100 drawn on the app icon itself.
-  const show = (app, v) => {
-    app.classList.add("is-loading");
-    app.style.setProperty("--p", v);
-    app.querySelector("[data-num]").textContent = v;
-  };
-  // Real downloads. Android: the newest release of this repository (published from Project-one main,
-  // rider + captain only). iPhone: the web apps in ./rider/ and ./captain/.
+  // ---- Downloads: real progress 0 -> 100 inside the page ----
+  // The APK files sit in Cloudflare R2 (copied there from this repo's GitHub Releases by .github/workflows/sync-r2.yml).
+  // latest.json lists the newest file of each app: { "captain": { "file": "...apk", "size": 123 }, ... }.
+  // The page reads the file itself, so the ring shows the real progress; when it is done the
+  // «تثبيت / تحديث» button saves it and the phone opens its installer.
+  const R2 = "https://pub-REPLACE_ME.r2.dev";
+  const R2_READY = !/REPLACE_ME/.test(R2);
   const REPO = "khubaibalramdan/Designs.github.io-";
-  let release = null;
-  const latest = () => release || (release = fetch(`https://api.github.com/repos/${REPO}/releases/latest`, { headers: { Accept: "application/vnd.github+json" } })
-    .then(r => r.ok ? r.json() : Promise.reject(new Error("no-release")))
-    .catch(e => { release = null; throw e; }));
-  const assetFor = (rel, who) => (rel.assets || []).find(x => new RegExp(`^abnaa-${who}-.*\\.apk$`, "i").test(x.name));
+  let manifest = null;
+  const getManifest = () => manifest || (manifest = fetch(`${R2}/latest.json?t=${Date.now()}`, { cache: "no-store" })
+    .then(r => r.ok ? r.json() : Promise.reject(new Error("no-manifest")))
+    .catch(e => { manifest = null; throw e; }));
 
-  const jobs = new Map();
-  const finish = app => { show(app, 100); app.classList.replace("is-loading", "is-done"); sparkle(app); shine(card); Sfx.done(); };
-  const reset = app => { app.classList.remove("is-loading", "is-done"); app.style.removeProperty("--p"); };
+  // Old route, kept only as a safety net if R2 cannot be reached: the phone downloads from GitHub Releases itself.
+  const gh = path => fetch(`https://api.github.com/repos/${REPO}/releases/${path}`, { headers: { Accept: "application/vnd.github+json" } }).then(r => r.ok ? r.json() : null);
+  const ver = x => { const m = /(\d+)\.apk$/i.exec(x.name); return m ? +m[1] : -1; };
+  const LEGACY = {
+    captain: () => gh("latest").then(r => r && (r.assets || []).find(x => /^abnaa-captain-.*\.apk$/i.test(x.name))),
+    rider:   () => gh("latest").then(r => r && (r.assets || []).find(x => /^abnaa-rider-.*\.apk$/i.test(x.name))),
+    mytouch: () => gh("tags/my-touch").then(r => r && (r.assets || []).filter(x => /^my-touch-.*\.apk$/i.test(x.name)).sort((p, q) => ver(q) - ver(p))[0]),
+    rafeeq:  () => gh("tags/rafeeq").then(r => r && (r.assets || []).find(x => /^rafeeq-darb-.*\.apk$/i.test(x.name)))
+  };
 
-  const download = async (app, who) => {
-    jobs.set(app, { abort() {} });
+  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const jobs = new Map();   // element -> { ctrl, url, name }
+  const parts = el => ({
+    num: el.querySelector("[data-num]"),
+    inst: el.querySelector("[data-install]"),
+    label: el.querySelector("[data-get-label]"),
+    status: el.matches(".app") ? status : el.querySelector("[data-dl-status]")
+  });
+  const btnSvg = el => el.querySelector(".gold-btn[data-get] svg");
+  const DL_ICON = (document.querySelector(".gold-btn[data-get] svg") || {}).outerHTML || "";
+  const BOX_ICON = (document.querySelector("[data-install] svg") || {}).outerHTML || "";
+  const swapIcon = (el, html) => { const sv = btnSvg(el); if (sv && html) sv.outerHTML = html; };
+  const say = (el, t) => { const st = parts(el).status; if (st) st.textContent = t; };
+  const setPct = (el, v) => { el.style.setProperty("--p", v); parts(el).num.textContent = v; };
+  const clear = el => {
+    const j = jobs.get(el); if (j && j.url) URL.revokeObjectURL(j.url);
+    jobs.delete(el);
+    el.classList.remove("is-loading", "is-done"); el.style.removeProperty("--p");
+    const p = parts(el); if (p.inst) p.inst.hidden = true; if (p.label) { p.label.textContent = "تنزيل التطبيق"; swapIcon(el, DL_ICON); }
+  };
+  const done = (el, url, name) => {
+    jobs.set(el, { url, name });
+    setPct(el, 100);
+    el.classList.replace("is-loading", "is-done");
+    const p = parts(el);
+    if (p.inst) p.inst.hidden = false;
+    if (p.label) { p.label.textContent = "تثبيت / تحديث"; swapIcon(el, BOX_ICON); }
+    sparkle(el); shine(el.closest(".card")); Sfx.done();
+    say(el, "اكتمل التنزيل. اضغط «تثبيت / تحديث»");
+  };
+  const install = el => {
+    const j = jobs.get(el); if (!j || !j.url) return;
     Sfx.tap();
-    status.textContent = "جارٍ تجهيز التنزيل…";
-    let asset;
-    try { asset = assetFor(await latest(), who); } catch (e) { asset = null; }
-    if (!asset) { jobs.delete(app); reset(app); status.textContent = "ملف التطبيق غير متوفر حالياً، جرّب بعد قليل"; return; }
-    // A hidden frame fetches the file (GitHub's file server lets the phone download it, not the page read it),
-    // so the page itself never moves to another screen.
+    const a = document.createElement("a");
+    a.href = j.url; a.download = j.name; document.body.appendChild(a); a.click(); a.remove();
+    say(el, "اضغط «فتح» بإشعار الجوال لتثبيت التطبيق");
+  };
+  const legacy = async (el, key) => {
+    const asset = await LEGACY[key]().catch(() => null);
+    clear(el);
+    if (!asset) { say(el, "ملف التطبيق غير متوفر حالياً، جرّب بعد قليل"); return; }
     const f = document.createElement("iframe");
     f.hidden = true; f.setAttribute("aria-hidden", "true"); f.src = asset.browser_download_url;
     document.body.appendChild(f); setTimeout(() => f.remove(), 120000);
-    // Estimated counter: the phone downloads the file itself, so the page cannot read the real progress.
-    // It runs 1 -> 99 over the time the file should take at this phone's connection speed, then the gold check.
-    const mbps = (navigator.connection && navigator.connection.downlink) || 12;      // the phone's own estimate
-    const bytesPerSec = Math.max(150e3, mbps * 1e6 / 8 * 0.7);
-    const total = Math.min(240, Math.max(8, (asset.size || 65e6) / bytesPerSec)) * 1000;
-    const t0 = performance.now();
-    shine(card); show(app, 1); app.classList.add("phone-dl");
-    status.textContent = "جارٍ التنزيل… النسبة تقريبية، والنسبة الدقيقة بإشعار الجوال";
-    const tick = () => {
-      if (!jobs.has(app)) return;
-      const k = Math.min(1, (performance.now() - t0) / total);
-      const eased = 1 - Math.pow(1 - k, 1.6);
-      show(app, Math.max(1, Math.min(99, Math.round(eased * 99))));
-      if (k < 1) { requestAnimationFrame(tick); return; }
-      jobs.delete(app); finish(app);
-      status.textContent = "خلص التنزيل تقريباً. افتح الملف من الإشعارات لتثبيته";
-      setTimeout(() => { reset(app); app.classList.remove("phone-dl"); }, 4000);
-    };
-    jobs.set(app, { abort() { jobs.delete(app); } });
-    requestAnimationFrame(tick);
+    say(el, "بدأ التنزيل بإشعار الجوال. افتح الملف منه لتثبيته");
   };
 
-  card.querySelectorAll(".app").forEach(app => {
-    const who = app.dataset.app;
-    app.querySelector("[data-get]").addEventListener("click", () => {
-      if (jobs.has(app)) return;
-      if (card.dataset.platform === "ios") { Sfx.tap(); const w = window.open(`./${who}/`, "_blank", "noopener"); if (!w) location.href = `./${who}/`; return; }
-      if (q.has("demo")) { // screenshots and videos only
-        let v = 1; const t = setInterval(() => { show(app, v); if (++v > 100) { clearInterval(t); jobs.delete(app); finish(app); status.textContent = "اكتمل التنزيل"; } }, 40);
-        jobs.set(app, { abort: () => clearInterval(t) }); Sfx.tap(); status.textContent = "جارٍ التنزيل…"; return;
+  const download = async el => {
+    const key = el.dataset.dl;
+    const ctrl = new AbortController();
+    jobs.set(el, { ctrl });
+    el.classList.remove("is-done"); el.classList.add("is-loading"); setPct(el, 0);
+    shine(el.closest(".card")); Sfx.tap();
+    say(el, "جارٍ التنزيل…");
+    if (!R2_READY) return legacy(el, key);
+    try {
+      const m = (await getManifest())[key];
+      if (!m || !m.file) throw new Error("no-file");
+      const r = await fetch(`${R2}/${encodeURIComponent(m.file)}`, { signal: ctrl.signal, cache: "no-store" });
+      if (!r.ok || !r.body) throw new Error("http-" + r.status);
+      const total = +r.headers.get("Content-Length") || m.size || 0;
+      const reader = r.body.getReader(), chunks = []; let got = 0, shown = -1;
+      for (;;) {
+        const { done: end, value } = await reader.read();
+        if (end) break;
+        chunks.push(value); got += value.length;
+        const v = total ? Math.min(99, Math.floor(got * 100 / total)) : 0;
+        if (v !== shown) { shown = v; setPct(el, v); }
       }
-      download(app, who);
+      if (total && got < total) throw new Error("short");
+      done(el, URL.createObjectURL(new Blob(chunks, { type: "application/vnd.android.package-archive" })), m.file);
+    } catch (e) {
+      if (ctrl.signal.aborted) return;
+      legacy(el, key);           // R2 not reachable: the phone downloads it the old way, the page never breaks
+    }
+  };
+
+  document.querySelectorAll("[data-dl]").forEach(el => {
+    const key = el.dataset.dl;
+    el.querySelector("[data-get]").addEventListener("click", () => {
+      if (el.classList.contains("is-done")) return install(el);
+      if (jobs.has(el)) return;
+      if (key === "captain" || key === "rider") {
+        if (card.dataset.platform === "ios") { Sfx.tap(); const w = window.open(`./${key}/`, "_blank", "noopener"); if (!w) location.href = `./${key}/`; return; }
+      } else if (isIOS) { Sfx.tap(); say(el, "التطبيق متوفر لأندرويد فقط"); return; }
+      if (q.has("demo")) { // screenshots and videos only
+        el.classList.add("is-loading"); let v = 0; say(el, "جارٍ التنزيل…");
+        const t = setInterval(() => { setPct(el, v); if (++v > 99) { clearInterval(t); done(el, "", "demo.apk"); } }, 40);
+        jobs.set(el, { ctrl: { abort: () => clearInterval(t) } }); return;
+      }
+      download(el);
     });
-    app.querySelector("[data-cancel]").addEventListener("click", () => {
-      const j = jobs.get(app); if (j) j.abort(); jobs.delete(app);
-      reset(app); Sfx.back();
-      status.textContent = "أُلغي التنزيل";
+    const inst = el.querySelector("[data-install]");
+    if (inst) inst.addEventListener("click", () => install(el));
+    el.querySelector("[data-cancel]").addEventListener("click", e => {
+      e.stopPropagation();
+      const j = jobs.get(el); if (j && j.ctrl) j.ctrl.abort();
+      clear(el); Sfx.back(); say(el, "أُلغي التنزيل");
     });
   });
-
-
-  // My-touch card (Android only): the APK sits in this repo's fixed "my-touch" release, published from
-  // Project-4 and never marked "latest", so the Abnaa downloads above keep using the latest release.
-  const mt = document.querySelector(".card.mytouch");
-  if (mt) {
-    const st = mt.querySelector("[data-mt-status]");
-    mt.querySelector("[data-mt-get]").addEventListener("click", async () => {
-      Sfx.tap(); shine(mt);
-      if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) { st.textContent = "التطبيق متوفر لأندرويد فقط"; return; }
-      st.textContent = "جارٍ تجهيز التنزيل…";
-      try {
-        const r = await fetch(`https://api.github.com/repos/${REPO}/releases/tags/my-touch`, { headers: { Accept: "application/vnd.github+json" } });
-        const rel = r.ok ? await r.json() : null;
-        // Highest my-touch-v<N>.apk wins (an old file left on the release can never be picked over a newer one).
-        const ver = x => { const m = /^my-touch-v(\d+)\.apk$/i.exec(x.name); return m ? +m[1] : -1; };
-        const a = rel && (rel.assets || []).filter(x => /^my-touch-.*\.apk$/i.test(x.name)).sort((p, q) => ver(q) - ver(p))[0];
-        if (!a) throw new Error("no-apk");
-        const f = document.createElement("iframe");
-        f.hidden = true; f.setAttribute("aria-hidden", "true"); f.src = a.browser_download_url;
-        document.body.appendChild(f); setTimeout(() => f.remove(), 120000);
-        st.textContent = "بدأ التنزيل. افتح الملف من الإشعارات لتثبيته";
-      } catch (e) { st.textContent = "ملف التطبيق غير متوفر حالياً، جرّب بعد قليل"; }
-    });
-  }
-
-  // Rafeeq Darbak card (Android only): APK in this repo's fixed "rafeeq" release, published from
-  // Rafeq-Aldarb- and never marked "latest". The app's update notice (Google Sheet) points here.
-  const rf = document.querySelector(".card.rafeeq");
-  if (rf) {
-    const st = rf.querySelector("[data-rf-status]");
-    rf.querySelector("[data-rf-get]").addEventListener("click", async () => {
-      Sfx.tap(); shine(rf);
-      if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) { st.textContent = "التطبيق متوفر لأندرويد فقط"; return; }
-      st.textContent = "جارٍ تجهيز التنزيل…";
-      try {
-        const r = await fetch(`https://api.github.com/repos/${REPO}/releases/tags/rafeeq`, { headers: { Accept: "application/vnd.github+json" } });
-        const rel = r.ok ? await r.json() : null;
-        const a = rel && (rel.assets || []).find(x => /^rafeeq-darb-.*\.apk$/i.test(x.name));
-        if (!a) throw new Error("no-apk");
-        const f = document.createElement("iframe");
-        f.hidden = true; f.setAttribute("aria-hidden", "true"); f.src = a.browser_download_url;
-        document.body.appendChild(f); setTimeout(() => f.remove(), 120000);
-        st.textContent = "بدأ التنزيل. افتح الملف من الإشعارات لتثبيته";
-      } catch (e) { st.textContent = "ملف التطبيق غير متوفر حالياً، جرّب بعد قليل"; }
-    });
-  }
 
   // QR: one for the page, one per project. Scanning a project code opens the page straight on its downloads.
   const sheet = document.getElementById("qr-sheet");
@@ -380,7 +390,6 @@
   const instSheet = document.getElementById("install-sheet");
   const ua = navigator.userAgent;
   const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
-  const isIOS = /iPhone|iPad|iPod/i.test(ua);
   const inApp = /FBAN|FBAV|Instagram|WhatsApp|Line\/|; wv\)/i.test(ua);
   let deferred = null;
   const showSteps = steps => {
@@ -406,5 +415,5 @@
   if ("serviceWorker" in navigator && window.isSecureContext && location.protocol !== "file:") navigator.serviceWorker.register("sw.js").catch(() => {});
 
   if (q.get("s")) setStage(q.get("s"), q.get("pf") || "android", true);
-  if (q.get("pct")) show(card.querySelector('[data-app="captain"]'), q.get("pct"));
+  if (q.get("pct")) { const a = card.querySelector('[data-app="captain"]'); a.classList.add("is-loading"); setPct(a, q.get("pct")); }
 })();
