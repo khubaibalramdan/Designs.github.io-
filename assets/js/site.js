@@ -277,6 +277,29 @@
     });
   }
 
+  // Rafeeq voice-assistant card (Android only): APK in this repo's fixed "rafeeq-voice" release, published from
+  // Rafeeq-Voice and never marked "latest". Highest rafeeq-voice-v<N>.apk wins.
+  const rv = document.querySelector(".card.rvoice");
+  if (rv) {
+    const st = rv.querySelector("[data-rv-status]");
+    rv.querySelector("[data-rv-get]").addEventListener("click", async () => {
+      Sfx.tap(); shine(rv);
+      if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) { st.textContent = "التطبيق متوفر لأندرويد فقط"; return; }
+      st.textContent = "جارٍ تجهيز التنزيل…";
+      try {
+        const r = await fetch(`https://api.github.com/repos/${REPO}/releases/tags/rafeeq-voice`, { headers: { Accept: "application/vnd.github+json" } });
+        const rel = r.ok ? await r.json() : null;
+        const ver = x => { const m = /^rafeeq-voice-v(\d+)\.apk$/i.exec(x.name); return m ? +m[1] : -1; };
+        const a = rel && (rel.assets || []).filter(x => /^rafeeq-voice-.*\.apk$/i.test(x.name)).sort((p, q) => ver(q) - ver(p))[0];
+        if (!a) throw new Error("no-apk");
+        const f = document.createElement("iframe");
+        f.hidden = true; f.setAttribute("aria-hidden", "true"); f.src = a.browser_download_url;
+        document.body.appendChild(f); setTimeout(() => f.remove(), 120000);
+        st.textContent = "بدأ التنزيل. افتح الملف من الإشعارات لتثبيته";
+      } catch (e) { st.textContent = "ملف التطبيق غير متوفر حالياً، جرّب بعد قليل"; }
+    });
+  }
+
   // QR: one for the page, one per project. Scanning a project code opens the page straight on its downloads.
   const sheet = document.getElementById("qr-sheet");
   const QR_TEXT = {
@@ -284,7 +307,8 @@
     abnaa: ["أبناء الشمال", "صوّر الرمز لفتح تنزيل تطبيقات أبناء الشمال مباشرة"],
     cashier: ["الكاشير الذكي", "صوّر الرمز لفتح كرت الكاشير الذكي مباشرة"],
     mytouch: ["My-touch", "صوّر الرمز لفتح تنزيل My-touch مباشرة"],
-    rafeeq:  ["رفيق دربك للكابتن", "صوّر الرمز لفتح تنزيل رفيق دربك مباشرة"]
+    rafeeq:  ["رفيق دربك للكابتن", "صوّر الرمز لفتح تنزيل رفيق دربك مباشرة"],
+    rvoice:  ["رفيق", "صوّر الرمز لفتح تنزيل رفيق مباشرة"]
   };
   let lastFocus = null;
   const openQR = key => {
@@ -321,6 +345,11 @@
       "أوقات الصلاة واتجاه القبلة",
       "تجربة مجانية 3 أيام، وبعدها دفعة وحدة 5 دنانير مدى الحياة",
       "لأندرويد فقط"]],
+    rvoice: ["رفيق", [
+      "مساعد صوتي للكابتن، بيصحى لما تحكي «يا رفيق»",
+      "بيرن، بيفتح التطبيقات، وبيقرأ رسائل الواتساب وبيرد عليها",
+      "إيدك على الستيرنغ وعيونك على الطريق",
+      "نسخة تجربة: هسا فيها تجربة «يا رفيق» بس · لأندرويد فقط"]],
     cashier: ["الكاشير الذكي", [
       "نظام كاش ومخزون للسوبر ماركت والمحلات",
       "قريباً"]]
@@ -356,6 +385,11 @@
   if (q.get("p") === "rafeeq") {
     const rc = document.querySelector(".card.rafeeq");
     if (rc) deck.slideTo([...deck.slides].findIndex(sl => sl.contains(rc)), 0);
+  }
+  // ?p=rvoice -> centre the Rafeeq voice-assistant card.
+  if (q.get("p") === "rvoice") {
+    const vc = document.querySelector(".card.rvoice");
+    if (vc) deck.slideTo([...deck.slides].findIndex(sl => sl.contains(vc)), 0);
   }
   // ?p=cashier -> centre the Smart Cashier card.
   if (q.get("p") === "cashier") {
