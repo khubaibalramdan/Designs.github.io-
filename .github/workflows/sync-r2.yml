@@ -25,6 +25,7 @@ jobs:
     env:
       BUCKET: abotala-apps
       PAGE_ORIGIN: https://khubaibalramdan.github.io
+      PUBLIC_URL: https://pub-006dc77427654817a14b55173aa2e2ad.r2.dev
       GH_TOKEN: ${{ github.token }}
       REPO: ${{ github.repository }}
       AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
@@ -94,3 +95,11 @@ jobs:
             fi
           done
           echo "Done:"; cat latest.json
+
+          # Check from outside, the way the page sees it: public link works and the page is allowed to read it.
+          sleep 5
+          H=$(curl -sS -D - -o /dev/null -H "Origin: $PAGE_ORIGIN" "$PUBLIC_URL/latest.json?t=$(date +%s)")
+          echo "$H" | head -1
+          echo "$H" | grep -qi "^access-control-allow-origin: $PAGE_ORIGIN" && echo "CORS OK" || { echo "CORS header missing"; exit 1; }
+          F=$(jq -r '.mytouch.file // .rafeeq.file // empty' latest.json)
+          [ -n "$F" ] && curl -sSf -o /dev/null -w "test download %{size_download} bytes\n" -H "Origin: $PAGE_ORIGIN" "$PUBLIC_URL/$F"

@@ -168,7 +168,7 @@
   // latest.json lists the newest file of each app: { "captain": { "file": "...apk", "size": 123 }, ... }.
   // The page reads the file itself, so the ring shows the real progress; when it is done the
   // «تثبيت / تحديث» button saves it and the phone opens its installer.
-  const R2 = "https://pub-REPLACE_ME.r2.dev";
+  const R2 = "https://pub-006dc77427654817a14b55173aa2e2ad.r2.dev";
   const R2_READY = !/REPLACE_ME/.test(R2);
   const REPO = "khubaibalramdan/Designs.github.io-";
   let manifest = null;
