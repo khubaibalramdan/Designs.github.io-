@@ -1,0 +1,10 @@
+# Cloudflare Pages: the K♡T page at https://kt-abotala.pages.dev/
+name = "kt-abotala"
+pages_build_output_dir = "_site"
+compatibility_date = "2026-11-01"
+
+# Stats store (downloads / installs / iPhone opens), read by /stats
+[[d1_databases]]
+binding = "DB"
+database_name = "kt-stats"
+database_id = "DATABASE_ID_SET_BY_WORKFLOW"

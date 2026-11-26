@@ -169,21 +169,15 @@
   // The page reads the file itself, so the ring shows the real progress; when it is done the
   // «تثبيت / تحديث» button saves it and the phone opens its installer.
   const R2 = "https://pub-006dc77427654817a14b55173aa2e2ad.r2.dev";
-  const R2_READY = !/REPLACE_ME/.test(R2);
-  const REPO = "khubaibalramdan/Designs.github.io-";
   let manifest = null;
   const getManifest = () => manifest || (manifest = fetch(`${R2}/latest.json?t=${Date.now()}`, { cache: "no-store" })
     .then(r => r.ok ? r.json() : Promise.reject(new Error("no-manifest")))
     .catch(e => { manifest = null; throw e; }));
 
-  // Old route, kept only as a safety net if R2 cannot be reached: the phone downloads from GitHub Releases itself.
-  const gh = path => fetch(`https://api.github.com/repos/${REPO}/releases/${path}`, { headers: { Accept: "application/vnd.github+json" } }).then(r => r.ok ? r.json() : null);
-  const ver = x => { const m = /(\d+)\.apk$/i.exec(x.name); return m ? +m[1] : -1; };
-  const LEGACY = {
-    captain: () => gh("latest").then(r => r && (r.assets || []).find(x => /^abnaa-captain-.*\.apk$/i.test(x.name))),
-    rider:   () => gh("latest").then(r => r && (r.assets || []).find(x => /^abnaa-rider-.*\.apk$/i.test(x.name))),
-    mytouch: () => gh("tags/my-touch").then(r => r && (r.assets || []).filter(x => /^my-touch-.*\.apk$/i.test(x.name)).sort((p, q) => ver(q) - ver(p))[0]),
-    rafeeq:  () => gh("tags/rafeeq").then(r => r && (r.assets || []).find(x => /^rafeeq-darb-.*\.apk$/i.test(x.name)))
+  // Counts (downloads / installs / iPhone opens) go to the page's own stats store on Cloudflare. No personal data.
+  const track = (e, app) => {
+    if (/github\.io$/.test(location.hostname) || location.protocol === "file:") return;
+    try { navigator.sendBeacon("/api/hit", new Blob([JSON.stringify({ e, app })], { type: "application/json" })); } catch (_) {}
   };
 
   const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -215,23 +209,17 @@
     if (p.label) { p.label.textContent = "تثبيت / تحديث"; swapIcon(el, BOX_ICON); }
     sparkle(el); shine(el.closest(".card")); Sfx.done();
     say(el, "اكتمل التنزيل. اضغط «تثبيت / تحديث»");
+    if (url) track("download", el.dataset.dl);
   };
   const install = el => {
     const j = jobs.get(el); if (!j || !j.url) return;
     Sfx.tap();
     const a = document.createElement("a");
     a.href = j.url; a.download = j.name; document.body.appendChild(a); a.click(); a.remove();
+    track("install", el.dataset.dl);
     say(el, "اضغط «فتح» بإشعار الجوال لتثبيت التطبيق");
   };
-  const legacy = async (el, key) => {
-    const asset = await LEGACY[key]().catch(() => null);
-    clear(el);
-    if (!asset) { say(el, "ملف التطبيق غير متوفر حالياً، جرّب بعد قليل"); return; }
-    const f = document.createElement("iframe");
-    f.hidden = true; f.setAttribute("aria-hidden", "true"); f.src = asset.browser_download_url;
-    document.body.appendChild(f); setTimeout(() => f.remove(), 120000);
-    say(el, "بدأ التنزيل بإشعار الجوال. افتح الملف منه لتثبيته");
-  };
+  const fail = el => { clear(el); say(el, "ملف التطبيق غير متوفر حالياً، جرّب بعد قليل"); };
 
   const download = async el => {
     const key = el.dataset.dl;
@@ -240,7 +228,6 @@
     el.classList.remove("is-done"); el.classList.add("is-loading"); setPct(el, 0);
     shine(el.closest(".card")); Sfx.tap();
     say(el, "جارٍ التنزيل…");
-    if (!R2_READY) return legacy(el, key);
     try {
       const m = (await getManifest())[key];
       if (!m || !m.file) throw new Error("no-file");
@@ -259,7 +246,7 @@
       done(el, URL.createObjectURL(new Blob(chunks, { type: "application/vnd.android.package-archive" })), m.file);
     } catch (e) {
       if (ctrl.signal.aborted) return;
-      legacy(el, key);           // R2 not reachable: the phone downloads it the old way, the page never breaks
+      fail(el);
     }
   };
 
@@ -269,7 +256,7 @@
       if (el.classList.contains("is-done")) return install(el);
       if (jobs.has(el)) return;
       if (key === "captain" || key === "rider") {
-        if (card.dataset.platform === "ios") { Sfx.tap(); const w = window.open(`./${key}/`, "_blank", "noopener"); if (!w) location.href = `./${key}/`; return; }
+        if (card.dataset.platform === "ios") { Sfx.tap(); track("open", key); const w = window.open(`./${key}/`, "_blank", "noopener"); if (!w) location.href = `./${key}/`; return; }
       } else if (isIOS) { Sfx.tap(); say(el, "التطبيق متوفر لأندرويد فقط"); return; }
       if (q.has("demo")) { // screenshots and videos only
         el.classList.add("is-loading"); let v = 0; say(el, "جارٍ التنزيل…");

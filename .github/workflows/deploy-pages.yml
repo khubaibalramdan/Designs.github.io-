@@ -1,0 +1,58 @@
+# Publishes the K♡T page to Cloudflare Pages (https://kt-abotala.pages.dev), with the stats store.
+# Creates the stats database and the Pages project the first time, so nothing has to be clicked in the dashboard.
+# Needs repo secrets: CLOUDFLARE_API_TOKEN (Pages: Edit + D1: Edit) and R2_ACCOUNT_ID.
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      PROJECT: kt-abotala
+    steps:
+      - name: Check setup
+        id: setup
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then echo "CLOUDFLARE_API_TOKEN not added yet: nothing to do."; echo "ready=false" >> "$GITHUB_OUTPUT"
+          else echo "ready=true" >> "$GITHUB_OUTPUT"; fi
+      - uses: actions/checkout@v4
+        if: steps.setup.outputs.ready == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.setup.outputs.ready == 'true'
+        with: { node-version: 22 }
+      - name: Deploy
+        if: steps.setup.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          npm i -g wrangler@4 >/dev/null 2>&1
+          # Stats database: create once, then reuse.
+          ID=$(wrangler d1 list --json | jq -r '.[] | select(.name=="kt-stats") | .uuid' | head -1)
+          if [ -z "$ID" ]; then wrangler d1 create kt-stats >/dev/null; ID=$(wrangler d1 list --json | jq -r '.[] | select(.name=="kt-stats") | .uuid' | head -1); fi
+          [ -n "$ID" ] || { echo "could not create the stats database"; exit 1; }
+          sed -i "s/DATABASE_ID_SET_BY_WORKFLOW/$ID/" wrangler.toml
+          # Pages project: create once.
+          wrangler pages project list --json | jq -e --arg p "$PROJECT" '.[] | select(.["Project Name"]==$p or .name==$p)' >/dev/null \
+            || wrangler pages project create "$PROJECT" --production-branch main
+          # Only the page's own files are published (no workflows, no settings).
+          mkdir _site
+          rsync -a --exclude .git --exclude .github --exclude functions --exclude _site --exclude wrangler.toml ./ _site/
+          wrangler pages deploy --project-name "$PROJECT" --branch main --commit-dirty=true
+          # Check from outside: page and stats page answer.
+          sleep 10
+          for u in "https://$PROJECT.pages.dev/" "https://$PROJECT.pages.dev/stats"; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "$u"); echo "$u -> $code"; [ "$code" = 200 ] || exit 1
+          done
