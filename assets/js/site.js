@@ -180,6 +180,13 @@
     try { navigator.sendBeacon("/api/hit", new Blob([JSON.stringify({ e, app })], { type: "application/json" })); } catch (_) {}
   };
 
+  // New download, update or re-download: this phone remembers the last file it got for each app.
+  // (Another phone, another browser or cleared browser data counts as a new download.)
+  const kindOf = (app, file) => {
+    let prev = null;
+    try { prev = localStorage.getItem("kt-dl-" + app); localStorage.setItem("kt-dl-" + app, file); } catch (_) {}
+    return !prev ? "new" : prev === file ? "redo" : "update";
+  };
   const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
   const jobs = new Map();   // element -> { ctrl, url, name }
   const parts = el => ({
@@ -209,7 +216,7 @@
     if (p.label) { p.label.textContent = "تثبيت / تحديث"; swapIcon(el, BOX_ICON); }
     sparkle(el); shine(el.closest(".card")); Sfx.done();
     say(el, "اكتمل التنزيل. اضغط «تثبيت / تحديث»");
-    if (url) track("download", el.dataset.dl);
+    if (url) track(kindOf(el.dataset.dl, name), el.dataset.dl);
   };
   const install = el => {
     const j = jobs.get(el); if (!j || !j.url) return;

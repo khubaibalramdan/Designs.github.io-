@@ -1,6 +1,6 @@
-// Counts one event from the K♡T page: download finished, install tapped, or iPhone app opened.
+// Counts one event from the K♡T page: new download, update, re-download, install tapped, or iPhone app opened.
 // Stored per day in the D1 database "kt-stats" (binding DB). No personal data is kept.
-const EVENTS = ["download", "install", "open"];
+const EVENTS = ["new", "update", "redo", "download", "install", "open"];   // "download" = older page version, counted as new
 const APPS = ["captain", "rider", "mytouch", "rafeeq"];
 
 export async function onRequestPost({ request, env }) {
