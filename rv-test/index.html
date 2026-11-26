@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>رفيق · نسخة تجربة</title>
+<style>
+  body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0e0c09;color:#f4e9d8;font-family:system-ui,sans-serif}
+  .box{width:min(88vw,380px);text-align:center;padding:28px 22px;border:1px solid #ffb02066;border-radius:24px;background:#17140f}
+  img{width:120px;height:120px}
+  h1{color:#ffb020;margin:10px 0 4px;font-size:28px}
+  p{color:#a89a84;margin:0 0 20px}
+  button{width:100%;height:56px;border:0;border-radius:18px;font-size:18px;font-weight:700;color:#0e0c09;background:linear-gradient(90deg,#ffb020,#e07b00)}
+  #st{margin-top:14px;color:#f4e9d8;min-height:24px}
+</style>
+</head>
+<body>
+<div class="box">
+  <img src="../assets/img/rafeeq-voice.webp" alt="">
+  <h1>رفيق</h1>
+  <p>نسخة تجربة · مش للنشر</p>
+  <button id="get" type="button">تنزيل التطبيق</button>
+  <div id="st"></div>
+</div>
+<script>
+  // Hidden test link (not on the main page). APK from this repo's "rafeeq-voice-test" release, never "latest".
+  const st = document.getElementById("st");
+  document.getElementById("get").addEventListener("click", async () => {
+    st.textContent = "جارٍ تجهيز التنزيل…";
+    try {
+      const r = await fetch("https://api.github.com/repos/khubaibalramdan/Designs.github.io-/releases/tags/rafeeq-voice-test", { headers: { Accept: "application/vnd.github+json" } });
+      const rel = r.ok ? await r.json() : null;
+      const ver = x => { const m = /^rafeeq-voice-v(\d+)\.apk$/i.exec(x.name); return m ? +m[1] : -1; };
+      const a = rel && (rel.assets || []).filter(x => /^rafeeq-voice-.*\.apk$/i.test(x.name)).sort((p, q) => ver(q) - ver(p))[0];
+      if (!a) throw new Error("no-apk");
+      const f = document.createElement("iframe");
+      f.hidden = true; f.src = a.browser_download_url;
+      document.body.appendChild(f); setTimeout(() => f.remove(), 120000);
+      st.textContent = "بدأ التنزيل. افتح الملف من الإشعارات لتثبيته";
+    } catch (e) { st.textContent = "الملف مش جاهز، جرّب بعد شوي"; }
+  });
+</script>
+</body>
+</html>
